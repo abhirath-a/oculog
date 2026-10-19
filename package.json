@@ -1,0 +1,20 @@
+{
+	"name": "oculog-workspace",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"start": "pnpm --dir mobile start",
+		"api": "bash scripts/start-api.sh",
+		"format": "bash scripts/biome.sh format --write .",
+		"check": "bash scripts/biome.sh check .",
+		"typecheck": "pnpm --dir mobile typecheck",
+		"test": "pnpm test:mobile && pnpm test:backend",
+		"test:mobile": "pnpm --dir mobile test",
+		"test:backend": "python3 -m unittest discover -s backend/tests -v",
+		"export:web": "pnpm --dir mobile export:web",
+		"export:all": "pnpm --dir mobile export:all"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.15"
+	}
+}

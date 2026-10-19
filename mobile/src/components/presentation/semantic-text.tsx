@@ -1,0 +1,1 @@
+export { SemanticText } from "./text";

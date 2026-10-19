@@ -1,0 +1,286 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
+
+const read = (path: string) =>
+	readFileSync(new URL(path, import.meta.url), "utf8");
+const ui = "../../node_modules/@expo/ui/";
+const source = read("../../src/components/auth/field.tsx");
+type Node = { type: string; props: Record<string, unknown> };
+const jsx = (type: string, props: Record<string, unknown>): Node => ({
+	type,
+	props,
+});
+function load(source: string, mocks: Record<string, unknown>) {
+	const exports: Record<string, (props: Record<string, unknown>) => Node> = {};
+	runInNewContext(
+		ts.transpileModule(source, {
+			compilerOptions: {
+				module: ts.ModuleKind.CommonJS,
+				jsx: ts.JsxEmit.ReactJSX,
+			},
+		}).outputText,
+		{
+			exports,
+			require: (name: string) => {
+				assert.ok(name in mocks, name);
+				return mocks[name];
+			},
+		},
+	);
+	return exports;
+}
+function installedModifiers(names: string[], platform: string) {
+	// Execute the installed modifier factories, not replacements with guessed shapes.
+	const code = read(`${ui}src/${platform}/modifiers/index.ts`);
+	const ast = ts.createSourceFile(
+		"modifiers.ts",
+		code,
+		ts.ScriptTarget.Latest,
+		true,
+	);
+	const selected = ast.statements.filter(
+		(statement) =>
+			ts.isVariableStatement(statement) &&
+			statement.declarationList.declarations.some((declaration) =>
+				names.includes(declaration.name.getText(ast)),
+			),
+	);
+	return load(
+		read(`${ui}src/swift-ui/modifiers/createModifier.ts`) +
+			selected.map((statement) => statement.getText(ast)).join("\n"),
+		{},
+	);
+}
+const swift = installedModifiers(
+	["font", "accessibilityLabel", "textFieldStyle", "frame"],
+	"swift-ui",
+);
+const compose = installedModifiers(
+	["semantics", "fillMaxWidth", "border", "paddingAll"],
+	"jetpack-compose",
+);
+const plain = (value: unknown) => JSON.parse(JSON.stringify(value));
+function harness(platform: string) {
+	const effects: (() => void)[] = [];
+	const states: { value: string }[] = [];
+	const refs: { current: { focus(): void } | null }[] = [];
+	const mocks = {
+		"react/jsx-runtime": { jsx, jsxs: jsx },
+		"@expo/ui": {
+			Column: "Column",
+			OutlinedTextField: Object.assign("OutlinedTextField", { Label: "Label" }),
+			RNHostView: "RNHostView",
+			TextInput: "TextInput",
+			useNativeState: (value: string) => {
+				const state = { value };
+				states.push(state);
+				return state;
+			},
+		},
+		"@expo/ui/jetpack-compose/modifiers": compose,
+		"@expo/ui/swift-ui/modifiers": swift,
+		"react-native": { Platform: { OS: platform } },
+		react: {
+			useImperativeHandle: (
+				ref: { current: unknown } | undefined,
+				create: () => unknown,
+			) => {
+				if (ref) ref.current = create();
+			},
+			useRef: () => {
+				const ref = { current: null };
+				refs.push(ref);
+				return ref;
+			},
+			useEffect: (effect: () => void) => effects.push(effect),
+		},
+		"../presentation": {
+			SemanticText: "SemanticText",
+			usePresentationTheme: () => ({ divider: "gray", text: "black" }),
+		},
+		"../ui": { Field: "Field" },
+		"./password-input": { AndroidPasswordInput: "AndroidPasswordInput" },
+	};
+	return {
+		effects,
+		states,
+		refs,
+		render: load(
+			platform === "ios"
+				? read("../../src/components/auth/field.ios.tsx")
+				: source,
+			mocks,
+		).AuthField,
+	};
+}
+
+test("iOS auth uses native rounded field decoration, Dynamic Type and one compact target without universal borders", () => {
+	for (const secure of [true, false]) {
+		const h = harness("ios");
+		let changed = "";
+		const tree = h.render({
+			label: secure ? "New password" : "Interval · days",
+			value: "saved",
+			secure,
+			disabled: true,
+			autoComplete: secure ? "new-password" : undefined,
+			onChange: (value: string) => {
+				changed = value;
+			},
+		});
+		const field = (tree.props.children as Node[]).find(
+			(node) => node.type === "TextInput",
+		);
+		assert.ok(field);
+		assert.equal(field.props.secureTextEntry, secure);
+		assert.equal(field.props.editable, false);
+		assert.equal(field.props.value, h.states[0]);
+		h.states[0].value = "old";
+		for (const effect of h.effects) effect();
+		assert.equal(h.states[0].value, "saved");
+		(field.props.onChangeText as (value: string) => void)("typed");
+		assert.equal(changed, "typed");
+		const modifiers = plain(field.props.modifiers) as {
+			$type: string;
+			label?: string;
+			textStyle?: string;
+		}[];
+		assert.deepEqual(modifiers.slice(0, 2), [
+			{
+				$type: "accessibilityLabel",
+				label: secure ? "New password" : "Interval · days",
+			},
+			{ $type: "font", textStyle: "body" },
+		]);
+		assert.equal("fontSize" in (field.props.textStyle as object), false);
+		assert.equal(field.props.style, undefined);
+		assert.deepEqual(modifiers.slice(2), [
+			{ $type: "textFieldStyle", style: "roundedBorder" },
+			{ $type: "frame", minHeight: 44 },
+		]);
+		assert.equal(field.props.autoCorrect, false);
+		assert.equal(field.props.autoCapitalize, "none");
+		assert.equal(field.props.autoComplete, secure ? "new-password" : undefined);
+	}
+});
+
+test("Android passwords select a narrow native adapter with password IME, masking, autofill, focus and controlled state", () => {
+	const native = read(
+		`${ui}android/src/main/java/expo/modules/ui/textfield/TextFieldShared.kt`,
+	);
+	assert.match(native, /"password" -> KeyboardType.Password/);
+	assert.match(native, /"password" -> PasswordVisualTransformation\(\)/);
+	const autofill = read(
+		`${ui}android/src/main/java/expo/modules/ui/SemanticsModifier.kt`,
+	);
+	assert.match(
+		autofill,
+		/"password", "current-password" -> ContentType.Password/,
+	);
+	assert.match(
+		autofill,
+		/"new-password", "password-new" -> ContentType.NewPassword/,
+	);
+	for (const autoComplete of ["current-password", "new-password"]) {
+		const h = harness("android");
+		let changed = "";
+		const tree = h.render({
+			label: "Password",
+			value: "saved",
+			secure: true,
+			disabled: false,
+			error: "Invalid password",
+			autoComplete,
+			onChange: (value: string) => {
+				changed = value;
+			},
+		});
+		const adapter =
+			tree.type === "AndroidPasswordInput"
+				? tree
+				: (tree.props.children as Node[]).find(
+						(node) => node.type === "AndroidPasswordInput",
+					);
+		assert.ok(adapter);
+		let focused = 0;
+		h.refs[1].current = {
+			focus: () => {
+				focused++;
+				return Promise.resolve();
+			},
+		};
+		h.states[0].value = "old";
+		for (const effect of h.effects) effect();
+		assert.equal(focused, 1);
+		assert.equal(h.states[0].value, "saved");
+		const nativeStates: { value: string }[] = [];
+		const nativeEffects: (() => void)[] = [];
+		const render = load(read("../../src/components/auth/password-input.tsx"), {
+			"react/jsx-runtime": { jsx, jsxs: jsx },
+			"@expo/ui/jetpack-compose": {
+				OutlinedTextField: Object.assign(function OutlinedTextField() {}, {
+					Label: "Label",
+				}),
+				Text: "Text",
+				useNativeState: (value: string) => {
+					const state = { value };
+					nativeStates.push(state);
+					return state;
+				},
+			},
+			react: { useEffect: (effect: () => void) => nativeEffects.push(effect) },
+			"@expo/ui/jetpack-compose/modifiers": compose,
+			"../presentation": {
+				usePresentationTheme: () => ({ divider: "gray", text: "black" }),
+			},
+		}).AndroidPasswordInput;
+		const field = render(adapter.props);
+		assert.equal(
+			(field.type as unknown as { name: string }).name,
+			"OutlinedTextField",
+		);
+		const label = field.props.children as Node;
+		assert.equal(label.type, "Label");
+		assert.equal((label.props.children as Node).props.children, "Password");
+		assert.equal(field.props.visualTransformation, "password");
+		assert.deepEqual(plain(field.props.keyboardOptions), {
+			keyboardType: "password",
+			capitalization: "none",
+			autoCorrectEnabled: false,
+			imeAction: "done",
+		});
+		let submitted = 0;
+		const next = render({
+			...adapter.props,
+			returnKeyType: "next",
+			onSubmitEditing: () => submitted++,
+		});
+		assert.equal(
+			(next.props.keyboardOptions as { imeAction: string }).imeAction,
+			"next",
+		);
+		(next.props.keyboardActions as { onNext(): void }).onNext();
+		assert.equal(submitted, 1);
+		assert.equal(field.props.ref, h.refs[1]);
+		assert.equal(field.props.value, nativeStates[0]);
+		nativeStates[0].value = "old";
+		for (const effect of nativeEffects) effect();
+		assert.equal(nativeStates[0].value, "saved");
+		(field.props.onValueChange as (value: string) => void)("typed");
+		assert.equal(changed, "typed");
+		assert.ok(
+			(plain(field.props.modifiers) as Record<string, unknown>[]).some(
+				(modifier) =>
+					modifier.$type === "semantics" &&
+					modifier.contentType === autoComplete,
+			),
+		);
+		assert.equal(
+			render({ ...adapter.props, disabled: true }).props.enabled,
+			false,
+		);
+	}
+});

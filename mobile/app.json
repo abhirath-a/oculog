@@ -1,0 +1,15 @@
+{
+	"expo": {
+		"name": "Oculog",
+		"slug": "oculog",
+		"scheme": "oculog",
+		"version": "1.0.0",
+		"orientation": "default",
+		"userInterfaceStyle": "automatic",
+		"plugins": ["expo-router", "expo-secure-store"],
+		"ios": { "bundleIdentifier": "app.oculog.mobile", "supportsTablet": true },
+		"android": { "package": "app.oculog.mobile" },
+		"web": { "bundler": "metro" },
+		"experiments": { "typedRoutes": true, "reactCompiler": true }
+	}
+}
