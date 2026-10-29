@@ -134,7 +134,20 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(response[0], 200)
         self.assertTrue(response[1]["openapi"].startswith("3."))
         paths = response[1]["paths"]
-        expected = {"/api/health": "get", "/api/auth/register": "post",
+        expected = {"/api/oculog/v2/wear/history": "get",
+                    "/api/oculog/v2/wear/day": "post",
+                    "/api/oculog/v2/wear/automation": "post",
+                    "/api/oculog/v3/advice": "get",
+                    "/api/oculog/v3/advice/consent": "put",
+                    "/api/oculog/v3/advice/answer": "post",
+                    "/api/oculog/v2/learning": "get",
+                    "/api/oculog/v2/learning/answer": "post",
+                    "/api/oculog/v2/learning/reset": "post",
+                    "/api/oculog/v2/education": "get",
+                    "/api/oculog/v2/education/consent": "put",
+                    "/api/oculog/v2/education/answer": "post",
+                    "/api/oculog/v1/advice": "get", "/api/oculog/v1/advice/answer": "post",
+                    "/api/health": "get", "/api/auth/register": "post",
                     "/api/auth/login": "post", "/api/auth/session": "get", "/api/auth/logout": "post",
                     **{SIMPLE + action: "get" if action == "state" else "post"
                        for action in ("state", "settings", "add", "replace", "day")}}
@@ -147,6 +160,106 @@ class HTTPTests(unittest.TestCase):
         for document in (docs[3], response[3]):
             for private in (self.token, self.account["id"], self.account["email"], "correct horse"):
                 self.assertNotIn(private.encode(), document)
+
+    def test_learning_http_grade_retry_reset_and_account_isolation(self):
+        from backend import learning
+        route = "/api/oculog/v2/learning"
+        for path, method, body in ((route, "GET", None), (route + "/answer", "POST", {}),
+                                   (route + "/reset", "POST", {})):
+            self.assertEqual(self.call(method, path, body)[0], 401)
+        core_before = {table: self.sql("SELECT * FROM " + table + " WHERE account_id=?", (self.account["id"],))
+                       for table in ("eyes", "days", "receipts")}
+        status, initial, _, raw = self.call("GET", route, token=self.token)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(initial["lessons"]), 8)
+        self.assertNotIn(b"correct_option_id", raw)
+        question = initial["recommended_question"]
+        bank_question = next(q for q in learning.load_bank()["questions"] if q["id"] == question["id"])
+        body = {"generation": initial["generation"], "source_bank_revision": initial["source_bank_revision"],
+                "question_id": question["id"], "option_id": bank_question["correct_option_id"],
+                "client_attempt_id": "learning-http-attempt-0001"}
+        graded = self.call("POST", route + "/answer", body, token=self.token)
+        self.assertEqual(graded[0], 200)
+        self.assertTrue(graded[1]["feedback"]["correct"])
+        self.assertEqual(graded[1]["progress"][question["id"]]["attempts"], 1)
+        self.assertEqual(self.call("POST", route + "/answer", body, token=self.token)[1], graded[1])
+        other = self.register("learning-other@example.invalid")
+        self.assertEqual(self.call("GET", route, token=other["token"])[1]["progress"], {})
+        reset = self.call("POST", route + "/reset", {"generation": initial["generation"]}, token=self.token)
+        self.assertEqual(reset[0], 200)
+        self.assertEqual(reset[1]["generation"], initial["generation"] + 1)
+        self.assertEqual(reset[1]["progress"], {})
+        self.assertEqual(self.call("POST", route + "/answer", body, token=self.token)[0], 409)
+        for table, rows in core_before.items():
+            self.assertEqual(self.sql("SELECT * FROM " + table + " WHERE account_id=?", (self.account["id"],)), rows)
+
+    def test_advice_authenticated_read_only_and_private(self):
+        route = "/api/oculog/v1/advice"
+        before = {table: self.sql("SELECT * FROM " + table) for table in
+                  ("accounts", "sessions", "eyes", "days", "receipts")}
+        for path, method, body in [(route, "GET", None), (route + "/answer", "POST", {"message": "red eyes"})]:
+            for token in (None, "invalid", "A" * 43):
+                self.assertEqual(self.call(method, path, body, token=token)[0], 401)
+        status, catalog, _, raw = self.call("GET", route, token=self.token)
+        self.assertEqual(status, 200)
+        self.assertEqual(set(catalog), {"version", "disclaimer", "safety_notice", "questions", "presentation"})
+        self.assertEqual({row["level"] for row in catalog["presentation"]["triage"]}, {"emergency", "urgent"})
+        self.assertEqual(len(catalog["presentation"]["topics"]), 4)
+        self.assertEqual(catalog["version"], 1)
+        for item in catalog["questions"]:
+            self.assertEqual(set(item), {"id", "question"})
+            response = self.call("POST", route + "/answer", {"question_id": item["id"]}, token=self.token)
+            self.assertEqual(response[0], 200)
+            self.assertEqual(response[1]["id"], item["id"])
+            self.assertTrue(response[1]["matched"])
+            self.assertEqual(set(response[1]), {"version", "id", "title", "paragraphs", "urgency", "sources",
+                                                "related_question_ids", "matched"})
+            for private in (self.token, self.account["email"], self.account["id"], "rules", "priority"):
+                self.assertNotIn(private.encode(), response[3])
+        message = "private-unmatched-marker-123"
+        result = self.call("POST", route + "/answer", {"message": message}, token=self.token)
+        self.assertEqual(result[0], 200)
+        self.assertFalse(result[1]["matched"])
+        self.assertIsNone(result[1]["id"])
+        self.assertEqual(result[1]["urgency"], "unknown")
+        self.assertNotIn(message.encode(), result[3])
+        for symptom, urgency in (("sleep in contacts and severe eye pain", "emergency"),
+                                 ("my eye hurts", "urgent"), ("pink eye", "urgent"),
+                                 ("red and sore", "urgent"), ("light hurts my eyes", "urgent"),
+                                 ("can't see", "emergency"), ("blurry vision", "urgent"),
+                                 ("cleaning and my eye hurts", "urgent"),
+                                 ("red and light hurts my eyes", "emergency")):
+            with self.subTest(message=symptom):
+                result = self.call("POST", route + "/answer", {"message": symptom}, token=self.token)
+                self.assertEqual(result[0], 200)
+                self.assertEqual(result[1]["urgency"], urgency)
+        self.assertEqual(before, {table: self.sql("SELECT * FROM " + table) for table in before})
+        self.log.flush()
+        self.log.seek(0)
+        self.assertNotIn(message, self.log.read())
+        self.sql("UPDATE sessions SET expires=?", (int(time.time()) - 1,))
+        self.assertEqual(self.call("GET", route, token=self.token)[0], 401)
+        self.assertEqual(self.call("POST", route + "/answer", {"message": "red"}, token=self.token)[0], 401)
+
+    def test_advice_request_validation(self):
+        route = "/api/oculog/v1/advice/answer"
+        for body in ({}, {"question_id": "missing"}, {"question_id": None}, {"question_id": 1},
+                     {"question_id": "red_eyes", "message": "red"}, {"message": "hi", "extra": 1},
+                     {"message": ""}, {"message": "   "}, {"message": "a" * 1001},
+                     {"message": None}, {"message": 1}, {"message": []}):
+            with self.subTest(body=body):
+                response = self.call("POST", route, body, token=self.token)
+                self.assertEqual(response[0], 400, response[1])
+                self.assertEqual(response[1]["error"]["code"], "validation")
+        for message in (" x ", "a" * 1000, " " + "a" * 1000 + " ", "é" * 1000):
+            self.assertEqual(self.call("POST", route, {"message": message}, token=self.token)[0], 200)
+        unknown = self.call("POST", route, {"question_id": "missing"}, token=self.token)
+        self.assertIn("question_id", unknown[1]["error"]["fields"])
+        for raw in (b"[]", b"null", b"{", b'{"message":"a","message":"b"}',
+                    b'{"message":NaN}', b'{"message":"\\ud800"}', b"x" * 17000):
+            self.assertEqual(self.call("POST", route, raw=raw, token=self.token)[0], 400)
+        self.assertEqual(self.call("POST", route, raw=b'{}', token=self.token,
+                                   headers={"Content-Type": "text/plain"})[0], 400)
 
     def test_auth_lifecycle_hashes_isolation_and_normalization(self):
         session = self.call("GET", "/api/auth/session", token=self.token)

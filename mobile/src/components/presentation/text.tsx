@@ -1,12 +1,11 @@
-import { Text as NativeText, RNHostView } from "@expo/ui";
-import { semantics } from "@expo/ui/jetpack-compose/modifiers";
+import { Text as NativeText } from "@expo/ui";
 import {
 	accessibilityAddTraits,
 	font,
 	foregroundStyle,
 	accessibilityLabel as nativeLabel,
 } from "@expo/ui/swift-ui/modifiers";
-import { Platform, PlatformColor, StyleSheet, Text } from "react-native";
+import { PlatformColor, StyleSheet, Text } from "react-native";
 import { usePresentationTheme } from "./theme";
 
 export type SemanticTextProps = {
@@ -17,27 +16,15 @@ export type SemanticTextProps = {
 	accessibilityLabel?: string;
 };
 
-const androidStyles = {
-	largeTitle: { fontSize: 32, lineHeight: 40, fontWeight: "400" },
-	title: { fontSize: 24, lineHeight: 32, fontWeight: "400" },
-	headline: { fontSize: 16, lineHeight: 24, fontWeight: "500" },
-	body: { fontSize: 16, lineHeight: 24, fontWeight: "400" },
-	callout: { fontSize: 14, lineHeight: 20, fontWeight: "400" },
-	caption: { fontSize: 12, lineHeight: 16, fontWeight: "400" },
-} as const;
 // UIKit defaults plus native dynamicTypeRamp. Never cap font scaling or line count.
-export const presentationTextStyles = StyleSheet.create(
-	Platform.OS === "ios"
-		? {
-				largeTitle: { fontSize: 34, fontWeight: "400" },
-				title: { fontSize: 28, fontWeight: "400" },
-				headline: { fontSize: 17, fontWeight: "600" },
-				body: { fontSize: 17, fontWeight: "400" },
-				callout: { fontSize: 16, fontWeight: "400" },
-				caption: { fontSize: 12, fontWeight: "400" },
-			}
-		: androidStyles,
-);
+export const presentationTextStyles = StyleSheet.create({
+	largeTitle: { fontSize: 34, fontWeight: "400" },
+	title: { fontSize: 28, fontWeight: "600" },
+	headline: { fontSize: 17, fontWeight: "600" },
+	body: { fontSize: 17, fontWeight: "400" },
+	callout: { fontSize: 16, fontWeight: "400" },
+	caption: { fontSize: 12, fontWeight: "400" },
+});
 
 function useTone(tone: SemanticTextProps["tone"]) {
 	const colors = usePresentationTheme();
@@ -70,7 +57,7 @@ export function PresentationText({
 				presentationTextStyles[role],
 				{
 					color:
-						Platform.OS === "ios" && tone !== "danger"
+						tone !== "danger"
 							? PlatformColor(tone === "secondary" ? "secondaryLabel" : "label")
 							: color,
 					flexShrink: 1,
@@ -91,41 +78,21 @@ export function SemanticText({
 	accessibilityLabel,
 }: SemanticTextProps) {
 	const color = useTone(tone);
-	if (Platform.OS === "web")
-		return (
-			<RNHostView matchContents>
-				<PresentationText
-					role={role}
-					tone={tone}
-					heading={heading}
-					accessibilityLabel={accessibilityLabel}
-				>
-					{children}
-				</PresentationText>
-			</RNHostView>
-		);
 	return (
 		<NativeText
-			textStyle={
-				Platform.OS === "ios" ? undefined : { ...androidStyles[role], color }
-			}
-			modifiers={
-				Platform.OS === "ios"
-					? [
-							font({ textStyle: role }),
-							foregroundStyle(
-								tone === "danger"
-									? color
-									: {
-											type: "hierarchical",
-											style: tone === "secondary" ? "secondary" : "primary",
-										},
-							),
-							...(heading ? [accessibilityAddTraits(["isHeader"])] : []),
-							...(accessibilityLabel ? [nativeLabel(accessibilityLabel)] : []),
-						]
-					: [semantics({ contentDescription: accessibilityLabel ?? children })]
-			}
+			modifiers={[
+				font({ textStyle: role }),
+				foregroundStyle(
+					tone === "danger"
+						? color
+						: {
+								type: "hierarchical",
+								style: tone === "secondary" ? "secondary" : "primary",
+							},
+				),
+				...(heading ? [accessibilityAddTraits(["isHeader"])] : []),
+				...(accessibilityLabel ? [nativeLabel(accessibilityLabel)] : []),
+			]}
 		>
 			{children}
 		</NativeText>

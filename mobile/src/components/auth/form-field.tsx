@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { PresentationText, usePresentationEpoch } from "../presentation";
 import { AuthField, type AuthFieldProps } from "./field";
 
-/** RN-tree adapter; the field itself is SwiftUI on iOS and Material Compose on Android. */
+/** RN-tree adapter for the SwiftUI field. */
 export function FormField({
 	hint,
 	...props

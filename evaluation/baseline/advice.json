@@ -1,0 +1,417 @@
+{
+	"version": 1,
+	"disclaimer": "Prepared general information only. This service is not an optician, cannot diagnose, and does not replace an eye care professional. It matches fixed phrases, not meaning, negation or context; a match does not establish that advice fits your situation.",
+	"safety_notice": "With red eyes, pain, light sensitivity or blurred vision, remove contact lenses, do not reinsert them, and seek urgent same-day professional assessment. Severe pain or sudden vision loss needs emergency care now. Red eyes with changed vision or light sensitivity also need emergency care. Do not delay care because a message did not match.",
+	"presentation": {
+		"summary": "Prepared answers, not AI. General information, not a diagnosis.",
+		"lens_action": "With these symptoms, remove contact lenses and do not reinsert them.",
+		"triage": [
+			{
+				"level": "emergency",
+				"title": "Emergency now",
+				"text": "Severe pain or sudden vision loss; red eyes with changed vision or light sensitivity. Seek emergency care now."
+			},
+			{
+				"level": "urgent",
+				"title": "Urgent today",
+				"text": "Red eyes, pain, light sensitivity or blurred vision: seek urgent same-day professional assessment."
+			}
+		],
+		"caution": "Do not delay care because a message did not match.",
+		"topics": [
+			{ "id": "red_eyes", "label": "Red eyes" },
+			{ "id": "sleeping", "label": "Sleeping in lenses" },
+			{ "id": "water", "label": "Water & lenses" },
+			{ "id": "cleaning", "label": "Cleaning & storage" }
+		]
+	},
+	"questions": [
+		{
+			"id": "emergency",
+			"question": "What if I have severe eye pain or sudden vision loss?",
+			"title": "Get emergency eye care now",
+			"urgency": "emergency",
+			"priority": 30,
+			"rules": [
+				["severe pain"],
+				["severe eye pain"],
+				["sudden vision loss"],
+				["loss of vision"],
+				["lost my vision"],
+				["cannot see"],
+				["can't see"],
+				["cant see"],
+				["suddenly blind"],
+				["unbearable pain"],
+				["extreme pain"],
+				["extreme eye pain"],
+				["worst eye pain"],
+				["red", "blurred"],
+				["red", "blurry"],
+				["red", "light sensitivity"],
+				["red", "photophobia"],
+				["red", "hurts to look at light"],
+				["redness", "blurred"],
+				["redness", "light sensitivity"],
+				["redness", "blurry"],
+				["redness", "photophobia"],
+				["red", "sensitive to light"],
+				["redness", "sensitive to light"],
+				["redness", "hurts to look at light"],
+				["red", "changed vision"],
+				["redness", "changed vision"],
+				["red", "light hurts my eyes"],
+				["redness", "light hurts my eyes"]
+			],
+			"paragraphs": [
+				"Severe eye pain or sudden loss of vision needs emergency assessment now. Red eyes with a change in sight or pain looking at light also need emergency care. Use your local emergency service or nearest emergency department; no local telephone number is assumed.",
+				"Remove contact lenses if you can do so easily, and do not reinsert them. Do not force a stuck lens or delay emergency care while trying to remove it. Do not drive yourself with affected vision."
+			],
+			"sources": [
+				{
+					"title": "NHS: Red eye",
+					"url": "https://www.nhs.uk/symptoms/red-eye/"
+				}
+			],
+			"related_question_ids": ["red_eyes", "pain_vision"]
+		},
+		{
+			"id": "pain_vision",
+			"question": "What should I do about eye pain, light sensitivity or blurred vision?",
+			"title": "Seek urgent same-day eye assessment",
+			"urgency": "urgent",
+			"priority": 20,
+			"rules": [
+				["pain"],
+				["painful"],
+				["my eye hurts"],
+				["my eyes hurt"],
+				["light hurts my eyes"],
+				["photophobia"],
+				["light sensitivity"],
+				["sensitive to light"],
+				["hurts to look at light"],
+				["blurred"],
+				["blurry"],
+				["discharge"],
+				["swollen eye"],
+				["burning eyes"],
+				["eye irritation"]
+			],
+			"paragraphs": [
+				"Remove your contact lenses and do not put them back in. Contact an eye care professional urgently for same-day assessment of pain, light sensitivity, blurred vision or other irritation; this service cannot tell how serious it is.",
+				"Severe pain, sudden vision loss, or red eyes with changed vision or light sensitivity require emergency care now. If a lens will not come out easily, do not force it; get professional help."
+			],
+			"sources": [
+				{
+					"title": "FDA: Contact Lens Risks",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+				},
+				{
+					"title": "NHS: Red eye",
+					"url": "https://www.nhs.uk/symptoms/red-eye/"
+				}
+			],
+			"related_question_ids": ["emergency", "red_eyes"]
+		},
+		{
+			"id": "red_eyes",
+			"question": "What should I do if my eyes are red?",
+			"title": "Red eyes with contact lenses need urgent assessment",
+			"urgency": "urgent",
+			"priority": 20,
+			"rules": [["red"], ["redness"], ["bloodshot"], ["pink eye"]],
+			"paragraphs": [
+				"Remove your contact lenses and do not reinsert them. Red eyes in a contact lens wearer need urgent same-day professional assessment, even if the redness seems mild. Do not assume it is harmless or wait several days.",
+				"Severe pain or sudden vision loss needs emergency care now. Red eyes with changed vision or light sensitivity also need emergency care. This prepared information cannot identify the cause."
+			],
+			"sources": [
+				{
+					"title": "NHS: Red eye",
+					"url": "https://www.nhs.uk/symptoms/red-eye/"
+				},
+				{
+					"title": "FDA: Contact Lens Risks",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+				}
+			],
+			"related_question_ids": ["emergency", "pain_vision"]
+		},
+		{
+			"id": "sleeping",
+			"question": "Can I sleep or nap in my contact lenses?",
+			"title": "Remove lenses before sleeping",
+			"urgency": "routine",
+			"priority": 10,
+			"rules": [
+				["sleeping"],
+				["sleep in contacts"],
+				["can i sleep in contacts"],
+				["nap in contacts"],
+				["i slept in my contacts"]
+			],
+			"paragraphs": [
+				"Avoid sleeping or napping in contact lenses unless your eye care professional has specifically directed it for your lenses. Follow their prescribed wear instructions, not a general assumption that overnight wear is safe.",
+				"If you slept in lenses, remove them without force. If there is redness, pain, light sensitivity or blurred vision, do not reinsert them and seek urgent same-day assessment; severe pain or sudden vision loss needs emergency care."
+			],
+			"sources": [
+				{
+					"title": "CDC: Preventing Eye Infections When Wearing Contacts",
+					"url": "https://www.cdc.gov/contact-lenses/prevention/index.html"
+				}
+			],
+			"related_question_ids": ["stuck_lens", "red_eyes"]
+		},
+		{
+			"id": "water",
+			"question": "Can I shower or swim with contact lenses?",
+			"title": "Keep lenses away from water",
+			"urgency": "routine",
+			"priority": 10,
+			"rules": [
+				["swimming"],
+				["showering"],
+				["water"],
+				["can i swim in contacts"],
+				["can i shower in contacts"]
+			],
+			"paragraphs": [
+				"Remove lenses before showering, swimming or using a hot tub. Do not rinse or store lenses in tap, bottled or distilled water, or homemade saline. Water can expose lenses to germs that cause serious infection.",
+				"If water has contacted your lenses, remove them and ask your eye care professional about safe disposal or disinfection for your lens type. Do not reinsert lenses if you have symptoms; seek urgent same-day assessment for redness, pain, light sensitivity or blurred vision."
+			],
+			"sources": [
+				{
+					"title": "CDC: Preventing Eye Infections When Wearing Contacts",
+					"url": "https://www.cdc.gov/contact-lenses/prevention/index.html"
+				},
+				{
+					"title": "FDA: Contact Lens Risks",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+				}
+			],
+			"related_question_ids": ["cleaning", "red_eyes"]
+		},
+		{
+			"id": "cleaning",
+			"question": "How should I clean and store reusable contact lenses?",
+			"title": "Use fresh recommended disinfecting solution",
+			"urgency": "routine",
+			"priority": 10,
+			"rules": [
+				["cleaning"],
+				["clean contacts"],
+				["fresh solution"],
+				["top up solution"],
+				["can i top up solution"]
+			],
+			"paragraphs": [
+				"Wash and completely dry your hands before handling lenses. Follow your eye care professional's and lens product's instructions. Rub and rinse reusable lenses with the recommended disinfecting solution as directed.",
+				"Use fresh solution each time. Discard used solution: never reuse it, mix old and fresh solution, or top up the case. Never use water or homemade saline to clean or store lenses. Daily disposable lenses are not for cleaning and reuse."
+			],
+			"sources": [
+				{
+					"title": "CDC: Preventing Eye Infections When Wearing Contacts",
+					"url": "https://www.cdc.gov/contact-lenses/prevention/index.html"
+				},
+				{
+					"title": "FDA: Contact Lens Risks",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+				}
+			],
+			"related_question_ids": ["case_care", "daily_disposal", "water"]
+		},
+		{
+			"id": "daily_disposal",
+			"question": "Can I reuse daily disposable contact lenses?",
+			"title": "Discard daily disposable lenses after use",
+			"urgency": "routine",
+			"priority": 10,
+			"rules": [
+				["daily disposables"],
+				["reuse daily lenses"],
+				["can i reuse daily contacts"]
+			],
+			"paragraphs": [
+				"Daily disposable lenses are for a single use. Discard them after removal; do not clean, store or wear them again. Follow the instructions for your prescribed lens type.",
+				"If you do not have a fresh prescribed pair, use your backup glasses rather than extending a disposable lens's use."
+			],
+			"sources": [
+				{
+					"title": "FDA: Types of Contact Lenses",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/types-contact-lenses"
+				}
+			],
+			"related_question_ids": ["replacement", "cleaning"]
+		},
+		{
+			"id": "replacement",
+			"question": "Can I stretch my contact lens replacement schedule?",
+			"title": "Follow the prescribed replacement schedule",
+			"urgency": "routine",
+			"priority": 10,
+			"rules": [
+				["replacement schedule"],
+				["replace lenses"],
+				["stretch replacement days"],
+				["can i wear monthly lenses longer"]
+			],
+			"paragraphs": [
+				"Replace lenses on the schedule your eye care professional and manufacturer specify. Do not stretch the interval because lenses still feel comfortable or were worn on fewer days.",
+				"Replacement intervals and permitted daily wearing hours are different. Confirm how your specific lens schedule is counted with your eye care professional; an app reminder is not permission to extend it. Use backup glasses if replacement lenses are unavailable."
+			],
+			"sources": [
+				{
+					"title": "CDC: Preventing Eye Infections When Wearing Contacts",
+					"url": "https://www.cdc.gov/contact-lenses/prevention/index.html"
+				}
+			],
+			"related_question_ids": ["daily_disposal", "follow_up"]
+		},
+		{
+			"id": "dryness",
+			"question": "What should I do if my contact lenses feel dry?",
+			"title": "Stop wear when lenses feel dry or uncomfortable",
+			"urgency": "urgent",
+			"priority": 20,
+			"rules": [
+				["dry"],
+				["dryness"],
+				["gritty"],
+				["uncomfortable"],
+				["discomfort"]
+			],
+			"paragraphs": [
+				"Remove lenses if they feel dry, gritty or uncomfortable, and do not reinsert them while symptoms persist. Contact your eye care professional promptly for advice; this service cannot establish that discomfort is only dryness or recommend medicines.",
+				"If there is redness, pain, light sensitivity or blurred vision, seek urgent same-day assessment. Severe pain or sudden vision loss needs emergency care now. Do not rinse lenses or eyes with water as a lens-care remedy."
+			],
+			"sources": [
+				{
+					"title": "FDA: Contact Lens Risks",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+				},
+				{
+					"title": "CDC: Preventing Eye Infections When Wearing Contacts",
+					"url": "https://www.cdc.gov/contact-lenses/prevention/index.html"
+				}
+			],
+			"related_question_ids": ["pain_vision", "follow_up"]
+		},
+		{
+			"id": "stuck_lens",
+			"question": "What if a contact lens feels stuck or will not come out?",
+			"title": "Do not force a stuck lens",
+			"urgency": "urgent",
+			"priority": 20,
+			"rules": [
+				["stuck lens"],
+				["lens stuck"],
+				["contact stuck"],
+				["cannot remove"],
+				["can't remove"],
+				["won't come out"],
+				["will not come out"]
+			],
+			"paragraphs": [
+				"Do not force removal, scrape the eye, or use tools to remove a stuck lens. If it cannot be removed easily with your usual instructed method, stop and contact an eye care professional promptly for help.",
+				"Redness, pain, light sensitivity or blurred vision needs urgent same-day assessment. Severe pain or sudden vision loss needs emergency care now; do not delay care while trying to remove the lens."
+			],
+			"sources": [
+				{
+					"title": "FDA: Contact Lens Risks",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+				}
+			],
+			"related_question_ids": ["pain_vision", "emergency"]
+		},
+		{
+			"id": "torn_lens",
+			"question": "Can I wear a torn or damaged contact lens?",
+			"title": "Do not wear a damaged lens",
+			"urgency": "urgent",
+			"priority": 20,
+			"rules": [
+				["torn lens"],
+				["torn contact"],
+				["damaged lens"],
+				["ripped lens"],
+				["broken contact lens"]
+			],
+			"paragraphs": [
+				"Do not insert or continue wearing a torn or damaged contact lens. Do not try to repair it. Use backup glasses or a fresh prescribed lens only if your eye is symptom-free.",
+				"If a lens tears while in your eye or you cannot remove it completely and easily, do not probe or force removal; contact an eye care professional promptly. Redness, pain, light sensitivity or blurred vision needs urgent same-day assessment; severe pain or sudden vision loss needs emergency care."
+			],
+			"sources": [
+				{
+					"title": "FDA: Contact Lens Risks",
+					"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+				}
+			],
+			"related_question_ids": ["stuck_lens", "pain_vision"]
+		},
+		{
+			"id": "follow_up",
+			"question": "When should I see an eye care professional?",
+			"title": "Keep regular professional follow-up",
+			"urgency": "routine",
+			"priority": 10,
+			"rules": [
+				["follow up"],
+				["checkup"],
+				["eye check"],
+				["contact professional"]
+			],
+			"paragraphs": [
+				"Visit your eye care professional yearly or as recommended for your needs. Ask them about lens fit, permitted wearing time, replacement intervals and suitable care products. Do not use this service to choose a prescription or diagnose an eye condition.",
+				"Do not wait for a routine visit if you have symptoms. Remove lenses and seek urgent same-day assessment for redness, pain, light sensitivity or blurred vision. Severe pain or sudden vision loss requires emergency care now."
+			],
+			"sources": [
+				{
+					"title": "CDC: Preventing Eye Infections When Wearing Contacts",
+					"url": "https://www.cdc.gov/contact-lenses/prevention/index.html"
+				}
+			],
+			"related_question_ids": ["red_eyes", "replacement"]
+		},
+		{
+			"id": "case_care",
+			"question": "How should I care for my contact lens case?",
+			"title": "Clean and replace your lens case",
+			"urgency": "routine",
+			"priority": 10,
+			"rules": [["case care"], ["clean lens case"], ["replace lens case"]],
+			"paragraphs": [
+				"Rub and rinse the case with contact lens solution, not water. Empty it and store it upside down with caps off after each use, following your product instructions.",
+				"Replace the case at least every three months or as directed by your eye care professional. Use fresh solution each time and never top up old solution."
+			],
+			"sources": [
+				{
+					"title": "CDC: Preventing Eye Infections When Wearing Contacts",
+					"url": "https://www.cdc.gov/contact-lenses/prevention/index.html"
+				}
+			],
+			"related_question_ids": ["cleaning", "water"]
+		}
+	],
+	"fallback": {
+		"id": null,
+		"title": "No reliable prepared match",
+		"urgency": "unknown",
+		"paragraphs": [
+			"I could not reliably match this message to a prepared answer. This is a fixed-phrase service: it does not understand meaning, negation or your situation, cannot diagnose, and cannot confirm that an eye problem is safe. Choose a suggested question or contact an eye care professional for advice.",
+			"If you have redness, pain, light sensitivity or blurred vision, remove contact lenses, do not reinsert them, and seek urgent same-day professional assessment. Severe pain or sudden vision loss needs emergency care now. Red eyes with changed vision or light sensitivity also need emergency care. Do not delay help because no answer matched."
+		],
+		"sources": [
+			{
+				"title": "FDA: Contact Lens Risks",
+				"url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-risks"
+			},
+			{ "title": "NHS: Red eye", "url": "https://www.nhs.uk/symptoms/red-eye/" }
+		],
+		"related_question_ids": [
+			"red_eyes",
+			"pain_vision",
+			"emergency",
+			"follow_up"
+		]
+	}
+}

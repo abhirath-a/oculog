@@ -1,5 +1,4 @@
 import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
 
 export type Account = import("../../shared/domain").User;
 export interface Session {
@@ -43,7 +42,6 @@ function publish(next: Session | null, trusted = true) {
 	for (const listener of listeners) listener();
 }
 async function writeSession(session: Session | null) {
-	if (Platform.OS === "web") return;
 	if (session)
 		await SecureStore.setItemAsync(AUTH, JSON.stringify(session), {
 			keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
@@ -63,11 +61,6 @@ export function persist() {
 	return enqueue(() => writeSession(snapshot));
 }
 async function acceptSession(candidate: Session, ticket: number) {
-	if (Platform.OS === "web") {
-		if (ticket !== epoch) return false;
-		publish(candidate);
-		return true;
-	}
 	return enqueue(async () => {
 		if (ticket !== epoch) return false;
 		try {
@@ -114,7 +107,6 @@ export async function clearSession() {
 	await persist();
 }
 export async function hydrate() {
-	if (Platform.OS === "web") return;
 	const ticket = epoch;
 	await persistence.catch(() => {});
 	const data = await SecureStore.getItemAsync(AUTH);

@@ -41,21 +41,30 @@ function harness(loading: boolean) {
 				return hooks[i];
 			},
 		},
-		"react-native": { View: "View", ActivityIndicator: "Spinner" },
-		"expo-router": {},
-		"../lib/api": { sessionStore: session },
-		"../lib/simple-controller": {},
-		"../lib/store": { useStore: () => store },
-		"./presentation": { ScreenFrame: "Screen", PresentationText: "Text" },
-		"./settings/overview": {},
-		"./settings/summary": {},
-		"./settings/schedule": {},
+		"react-native": {
+			View: "View",
+			Text: "Text",
+			ActivityIndicator: "Spinner",
+			StyleSheet: { create: (s: unknown) => s },
+			useColorScheme: () => "light",
+		},
+		"@expo/ui": { RNHostView: "RNHostView" },
+		"../native-page": {
+			NativeAction: "Button",
+			NativePage: "Page",
+			NativeRow: "Row",
+			NativeSection: "Section",
+			NativeStack: "Stack",
+		},
+		"expo-router": { useRouter: () => ({ push() {} }) },
 		"../../lib/api": { sessionStore: session },
 		"../../lib/simple-controller": {},
 		"../../lib/store": { useStore: () => store },
-		"../ui": undefined,
+		"./presentation": { ScreenFrame: "Screen", PresentationText: "Text" },
+		"./overview": {},
+		"./summary": {},
 		"./schedule": {},
-		"./ui": {
+		"../ui": {
 			Button: "Button",
 			confirm: async () => {
 				confirmations++;
@@ -72,7 +81,6 @@ function harness(loading: boolean) {
 			}),
 		},
 	};
-	mocks["../ui"] = mocks["./ui"];
 	const controller = {};
 	runInNewContext(
 		ts.transpileModule(
@@ -95,12 +103,12 @@ function harness(loading: boolean) {
 			},
 		},
 	);
-	mocks["./settings/use-schedule-settings"] = controller;
+	mocks["./use-schedule-settings"] = controller;
 	const exports = {} as { default: () => unknown };
 	runInNewContext(
 		ts.transpileModule(
 			readFileSync(
-				new URL("../../src/components/settings.tsx", import.meta.url),
+				new URL("../../src/components/settings/screen.tsx", import.meta.url),
 				"utf8",
 			),
 			{
@@ -135,7 +143,7 @@ function harness(loading: boolean) {
 	};
 	const button = (title: string) => {
 		const node = elements(render()).find(
-			(node) => node.type === "Button" && node.props.title === title,
+			(node) => node.type === "Button" && node.props.label === title,
 		);
 		assert.ok(node, title);
 		return node;
@@ -165,7 +173,7 @@ test("authenticated null-state Settings keeps account/sign-out during loading an
 		);
 		assert.equal(h.button("Sign out").props.disabled, false);
 		if (!loading) {
-			h.press("Retry connection");
+			h.press("Try again");
 			assert.equal(h.counts().reloads, 1);
 		}
 		h.press("Sign out");

@@ -1,0 +1,18 @@
+{
+  "frozen_at": "2026-10-23T04:24:00.057971+00:00",
+  "description": "Exact existing JSON prepared matcher bytes; legacy NHS/CDC/FDA references are not the new RAG corpus. No reference contexts inferred from answers.",
+  "files": [
+    {
+      "original": "backend/advice.py",
+      "frozen": "evaluation/baseline/advice.py",
+      "sha256": "2876f205a6e024541a3b7a796ffbe40e1e097bfb5d1aca018bd9a2ce60a191e9",
+      "bytes": 7477
+    },
+    {
+      "original": "backend/advice.json",
+      "frozen": "evaluation/baseline/advice.json",
+      "sha256": "a03d86016430b41c712fe3c5b02148e202f2b4d731fde740a4f0bd2c799b2f5e",
+      "bytes": 17154
+    }
+  ]
+}

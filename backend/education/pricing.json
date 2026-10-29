@@ -1,0 +1,20 @@
+{
+  "version": "2026-10-23.standard.usd",
+  "reviewed_at": "2026-10-23T04:12:27+00:00",
+  "expires_after_days": 30,
+  "source": "https://ai.google.dev/gemini-api/docs/pricing",
+  "source_revision": "HTTP Date Fri, 23 Oct 2026 04:04:05 GMT",
+  "source_sha256": "057659242747974f16a58675b32bd95f9991aca0e6840b720850b6bb39d78db2",
+  "model": "gemini-3.5-flash-lite",
+  "input_limit": 1048576,
+  "output_limit": 65536,
+  "input_usd_per_million": "0.30",
+  "output_usd_per_million_including_thoughts": "2.50",
+  "embedding_model": "gemini-embedding-2",
+  "embedding_input_limit": 8192,
+  "embedding_usd_per_million": "0.20",
+  "model_source": "https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite",
+  "interactions_source": "https://ai.google.dev/api/interactions-api",
+  "thinking_source": "https://ai.google.dev/gemini-api/docs/thinking",
+  "embedding_source": "https://ai.google.dev/gemini-api/docs/embeddings"
+}

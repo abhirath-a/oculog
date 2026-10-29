@@ -114,7 +114,7 @@ test("new account and new completed intent cannot inherit successful-eye skips",
 
 test("Home routes setup to the focused lens editor and delegates sheet boundary to the adapter", () => {
 	const source = readFileSync(
-		new URL("../../src/components/simple-home.tsx", import.meta.url),
+		new URL("../../src/components/home/screen.tsx", import.meta.url),
 		"utf8",
 	);
 	assert.match(source, /router\.push\("\/lens-editor"\)/);

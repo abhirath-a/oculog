@@ -1,5 +1,5 @@
 import { createElement, Fragment, type ReactNode } from "react";
-import { Platform, useColorScheme } from "react-native";
+import { useColorScheme } from "react-native";
 
 export function PresentationThemeProvider({
 	children,
@@ -24,7 +24,7 @@ export type PresentationTheme = {
 	error: string;
 };
 
-/** RN and native hosts share the same appearance; Android overrides with Material You. */
+/** RN and native hosts share the same iOS appearance. */
 export function usePresentationTheme(): PresentationTheme {
 	const dark = useColorScheme() === "dark";
 	return dark
@@ -39,7 +39,7 @@ export function usePresentationTheme(): PresentationTheme {
 				error: "#FFB3A5",
 			}
 		: {
-				background: Platform.OS === "ios" ? "#F2F2F7" : "#FFFFFF",
+				background: "#F2F2F7",
 				surface: "#FFFFFF",
 				text: "#000000",
 				secondary: "#636366",

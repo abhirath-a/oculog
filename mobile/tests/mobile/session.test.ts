@@ -24,7 +24,6 @@ function deferred<T>() {
 	return { resolve, promise };
 }
 function harness(
-	os = "ios",
 	initial: string | null = null,
 	origin = "https://example.test/",
 ) {
@@ -55,7 +54,6 @@ function harness(
 				return fetcher(url, init);
 			},
 			require: (name: string) => {
-				if (name === "react-native") return { Platform: { OS: os } };
 				assert.equal(name, "expo-secure-store");
 				return {
 					WHEN_UNLOCKED_THIS_DEVICE_ONLY: "device-only",
@@ -99,9 +97,9 @@ function harness(
 	};
 }
 
-test("opaque sessions persist the complete minimal account and UTC expiry, web stays memory-only", async () => {
-	for (const os of ["ios", "web"]) {
-		const h = harness(os);
+test("opaque sessions persist the complete minimal account and UTC expiry", async () => {
+	{
+		const h = harness();
 		await h.api.authenticate("register", {
 			email: "a@example.com",
 			password: "password",
@@ -112,14 +110,11 @@ test("opaque sessions persist the complete minimal account and UTC expiry, web s
 		assert.equal(h.api.sessionStore.isValid, true);
 		assert.equal(h.calls[0].url, "https://example.test/api/auth/register");
 		assert.equal(new Headers(h.calls[0].init.headers).get("Authorization"), "");
-		assert.deepEqual(
-			h.saved() && JSON.parse(h.saved() || "null"),
-			os === "web" ? null : session(),
-		);
+		assert.deepEqual(h.saved() && JSON.parse(h.saved() || "null"), session());
 	}
 });
 test("restore validates via GET session and keeps the same opaque bearer token", async () => {
-	const h = harness("ios", JSON.stringify(session()));
+	const h = harness(JSON.stringify(session()));
 	await h.api.hydrate();
 	assert.equal(
 		h.api.user(),
@@ -142,7 +137,7 @@ test("expired, malformed and old record-format saves are cleared without JWT dec
 		JSON.stringify({ token: "old", record: { id: "a" } }),
 		JSON.stringify({ ...session(), expiresAt: "2000-01-01T00:00:00Z" }),
 	]) {
-		const h = harness("ios", initial);
+		const h = harness(initial);
 		await h.api.hydrate();
 		assert.equal(h.api.sessionStore.account, null);
 		assert.equal(h.saved(), null);
@@ -330,7 +325,7 @@ test("mobile fetch + transport integrate with the real FastAPI HTTP session and 
 				reject(new Error(`Fixture exited ${code}: ${output}`));
 			});
 		});
-		const h = harness("ios", null, origin);
+		const h = harness(null, origin);
 		h.fetch(async (url, init) => {
 			const response = await fetch(url, init);
 			if (url.endsWith("/api/auth/register"))
@@ -358,8 +353,8 @@ test("mobile fetch + transport integrate with the real FastAPI HTTP session and 
 			screen.store.ready = true;
 		})();
 		await reading.promise;
-		screen.fill("Email", credentials.email);
-		screen.fill("Name", "Mobile");
+		screen.fill("Email address", credentials.email);
+		screen.fill("Your name", "Mobile");
 		screen.fill("Password", credentials.password);
 		screen.fill("Confirm password", credentials.password);
 		assert.equal(screen.button().props.disabled, true);
@@ -461,8 +456,8 @@ test("mobile fetch + transport integrate with the real FastAPI HTTP session and 
 	}
 });
 
-test("offline restore stays gated until server validation succeeds; web ignores disk credentials", async () => {
-	const h = harness("ios", JSON.stringify(session()));
+test("offline restore stays gated until server validation succeeds", async () => {
+	const h = harness(JSON.stringify(session()));
 	await h.api.hydrate();
 	h.fetch(async () => {
 		throw new TypeError("offline");
@@ -477,10 +472,6 @@ test("offline restore stays gated until server validation succeeds; web ignores 
 	h.fetch(async () => Response.json(session()));
 	await h.api.refreshAuth();
 	assert.equal(h.api.user()?.id, "a");
-	const web = harness("web", JSON.stringify(session()));
-	await web.api.hydrate();
-	assert.equal(web.api.user(), null);
-	assert.equal(web.api.sessionStore.token, "");
 });
 
 test("failed native persistence stays unauthenticated and the real useAction reports a recoverable error", async () => {
@@ -491,7 +482,7 @@ test("failed native persistence stays unauthenticated and the real useAction rep
 	});
 	const screen = authScreen(h.api);
 	screen.store.ready = true;
-	screen.fill("Email", "a@example.com");
+	screen.fill("Email address", "a@example.com");
 	screen.fill("Password", "password123");
 	screen.fill("Confirm password", "password123");
 	screen.press();
@@ -508,7 +499,7 @@ test("failed native persistence stays unauthenticated and the real useAction rep
 	h.writer(async () => {});
 	const login = authScreen(h.api, "login");
 	login.store.ready = true;
-	login.fill("Email", "a@example.com");
+	login.fill("Email address", "a@example.com");
 	login.fill("Password", "password123");
 	login.press();
 	await login.flush();
@@ -529,7 +520,7 @@ test("delayed secure candidate is not published; logout/new authentication inval
 		});
 		const screen = authScreen(h.api);
 		screen.store.ready = true;
-		screen.fill("Email", "a@example.com");
+		screen.fill("Email address", "a@example.com");
 		screen.fill("Password", "password123");
 		screen.fill("Confirm password", "password123");
 		screen.press();
@@ -592,7 +583,7 @@ for (const stage of ["http", "secure-write"] as const) {
 		assert.equal(provider.ready, true);
 		const screen = authScreen(h.api, stage === "http" ? "login" : "register");
 		screen.store.ready = provider.ready;
-		screen.fill("Email", "a@example.com");
+		screen.fill("Email address", "a@example.com");
 		screen.fill("Password", "password123");
 		if (stage === "secure-write")
 			screen.fill("Confirm password", "password123");

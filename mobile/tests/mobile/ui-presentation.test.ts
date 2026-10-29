@@ -6,9 +6,13 @@ import ts from "typescript";
 import type { SimpleState } from "../../shared/simple-domain";
 import * as addIntent from "../../src/components/home/add-intent";
 import * as homeModel from "../../src/components/home/model";
+import * as todayModel from "../../src/components/home/today-model";
 import * as controller from "../../src/lib/simple-controller";
-
-type Element = { type: unknown; props: Record<string, unknown>; key?: unknown };
+type Element = {
+	type: unknown;
+	props: Record<string, unknown>;
+	key?: unknown;
+};
 function jsx(
 	type: unknown,
 	props: Record<string, unknown>,
@@ -34,7 +38,10 @@ function invoke(node: Element, name: string, ...args: unknown[]) {
 	assert.equal(typeof callback, "function");
 	return (callback as (...values: unknown[]) => unknown)(...args);
 }
-type MutationBody = { eye?: string; quantity?: number };
+type MutationBody = {
+	eye?: string;
+	quantity?: number;
+};
 function fixture(): SimpleState {
 	return {
 		today: "2026-04-01",
@@ -51,11 +58,13 @@ function fixture(): SimpleState {
 		daily: { localDate: "2026-04-01", worn: null },
 	};
 }
-
 // Execute the real TSX with lightweight view/hook doubles, not a native device.
 function homeHarness() {
 	const state = fixture();
-	const calls: { route: string; body: MutationBody }[] = [];
+	const calls: {
+		route: string;
+		body: MutationBody;
+	}[] = [];
 	const pending: Promise<unknown>[] = [];
 	const hooks: unknown[] = [];
 	let cursor = 0;
@@ -81,7 +90,7 @@ function homeHarness() {
 		loading: false,
 		pending: false,
 		error: "",
-		account: { email: "test@example.com" },
+		account: { id: "owner", email: "test@example.com" },
 		mutate: async (route: string, body: MutationBody) => {
 			calls.push({ route, body });
 			if (route === "add" && body.eye === "right" && failRight)
@@ -119,14 +128,6 @@ function homeHarness() {
 				{ Section: "Section", SectionFooter: "SectionFooter" },
 			),
 		},
-		"@expo/ui/jetpack-compose/modifiers": {
-			semantics: (value: unknown) => value,
-			fillMaxWidth: (fraction?: number) => ({
-				$type: "fillMaxWidth",
-				fraction,
-			}),
-			weight: (value: number) => ({ $type: "weight", value }),
-		},
 		"@expo/ui/swift-ui/modifiers": {
 			frame: (value: unknown) => value,
 			accessibilityLabel: (value: string) => ({ label: value }),
@@ -149,25 +150,32 @@ function homeHarness() {
 			notifySuccess: async () => {},
 		},
 		"expo-router": { useRouter: () => ({ push: () => {} }) },
-		"./home/add-intent": addIntent,
-		"./home/AddContactsForm": { __esModule: true, default: "AddContactsForm" },
+		"./add-intent": addIntent,
+		"./AddContactsForm": { __esModule: true, default: "AddContactsForm" },
 		"./model": homeModel,
-		"./daily-choice": { DailyChoice: "DailyChoice" },
-		"./home/daily-choice": { DailyChoice: "DailyChoice" },
+		"./today-model": todayModel,
+		"./today-design": {
+			TodayAction: "Button",
+			TodaySection: "Section",
+			TodayRow: "Row",
+			TodayText: "Text",
+		},
+		"./today-feedback": { __esModule: true, default: "TodayFeedback" },
+
 		"react-native": {
-			Platform: { OS: "android" },
+			Platform: { OS: "ios" },
 			useColorScheme: () => "light",
 			useWindowDimensions: () => ({ width: 550, height: 960, fontScale: 1 }),
 			ScrollView: "ScrollView",
 			Text: "Text",
 			View: "View",
 		},
-		"../lib/api": {
+		"../../lib/api": {
 			sessionStore: { account: { id: "owner" }, token: "token" },
 		},
-		"../lib/simple-controller": controller,
-		"../lib/store": { useStore: () => store },
-		"./ui": {
+		"../../lib/simple-controller": controller,
+		"../../lib/store": { useStore: () => store },
+		"../ui": {
 			...ui,
 			styles: { row: {} },
 			useColors: () => ({ bg: "white", text: "black", danger: "red" }),
@@ -185,16 +193,11 @@ function homeHarness() {
 			}),
 		},
 	};
-	mocks["../ui"] = mocks["./ui"];
-	mocks["./AddContactsForm"] = mocks["./home/AddContactsForm"];
-	const sheetExports = {} as { default: (props: unknown) => Element };
+	const wearExports = {};
 	runInNewContext(
 		ts.transpileModule(
 			readFileSync(
-				new URL(
-					"../../src/components/home/AddContactsSheet.tsx",
-					import.meta.url,
-				),
+				new URL("../../src/components/home/today-wear.ts", import.meta.url),
 				"utf8",
 			),
 			{
@@ -205,14 +208,22 @@ function homeHarness() {
 			},
 		).outputText,
 		{
-			exports: sheetExports,
+			exports: wearExports,
 			require: (name: string) => {
 				assert.ok(name in mocks, name);
 				return mocks[name];
 			},
 		},
 	);
-	mocks["./home/AddContactsSheet"] = {
+	mocks["./today-wear"] = wearExports;
+	mocks["./AddContactsForm"] = mocks["./AddContactsForm"];
+	const sheetExports = {} as {
+		default: (props: unknown) => Element;
+	};
+	// The owner controls sheet state; native sheet internals have their own executable suite.
+	sheetExports.default = (props: Record<string, unknown>) =>
+		jsx("NativeSheet", { ...props, children: jsx("AddContactsForm", props) });
+	mocks["./AddContactsSheet"] = {
 		__esModule: true,
 		default: sheetExports.default,
 	};
@@ -224,7 +235,7 @@ function homeHarness() {
 	runInNewContext(
 		ts.transpileModule(
 			readFileSync(
-				new URL("../../src/components/home/HomeContent.tsx", import.meta.url),
+				new URL("../../src/components/home/today-content.tsx", import.meta.url),
 				"utf8",
 			),
 			{
@@ -242,12 +253,12 @@ function homeHarness() {
 			},
 		},
 	);
-	mocks["./home/HomeContent"] = {
+	mocks["./HomeContent"] = {
 		__esModule: true,
 		default: homeExports.default,
 	};
 	const source = readFileSync(
-		new URL("../../src/components/simple-home.tsx", import.meta.url),
+		new URL("../../src/components/home/screen.tsx", import.meta.url),
 		"utf8",
 	);
 	const output = ts.transpileModule(source, {
@@ -316,7 +327,6 @@ function find(node: Element, type: string, title?: string) {
 	assert.ok(found, `${type} ${title ?? ""} should be present`);
 	return found;
 }
-
 test("eye row uses server remaining days and omits replacement without spares", () => {
 	const harness = homeHarness();
 	const settings = {
@@ -337,143 +347,78 @@ test("eye row uses server remaining days and omits replacement without spares", 
 	);
 	assert.match(text(card), /Spares: 0/);
 });
-
-test("shared daily choices offer only Yes/No, unknown selects neither, and disabled callbacks cannot write", () => {
-	for (const platform of ["android", "ios", "web"]) {
-		const exports = {} as { DailyChoice: (props: unknown) => Element };
-		const mocks: Record<string, unknown> = {
-			"react/jsx-runtime": { jsx, jsxs: jsx },
-			"@expo/ui": { Button: "Button", Column: "Column" },
-			"@expo/ui/jetpack-compose/modifiers": {
-				selectableGroup: () => ({ group: true }),
-				selectable: (selected: boolean) => ({ selected }),
-				semantics: (value: unknown) => value,
-			},
-			"@expo/ui/swift-ui/modifiers": {
-				frame: (value: unknown) => value,
-				accessibilityLabel: (label: string) => ({ label }),
-				accessibilityValue: (value: string) => ({ value }),
-				accessibilityAddTraits: (traits: string[]) => ({ traits }),
-			},
-			"react-native": {
-				Platform: { OS: platform },
-				View: "View",
-				Pressable: "Pressable",
-				Text: "Text",
-			},
-			"../presentation": {
-				usePresentationTheme: () => ({
-					primary: "teal",
-					surface: "white",
-					text: "black",
-					onPrimary: "white",
-				}),
-			},
-		};
-		runInNewContext(
-			ts.transpileModule(
-				readFileSync(
-					new URL(
-						"../../src/components/home/daily-choice.tsx",
-						import.meta.url,
-					),
-					"utf8",
-				),
-				{
-					compilerOptions: {
-						module: ts.ModuleKind.CommonJS,
-						jsx: ts.JsxEmit.ReactJSX,
-					},
-				},
-			).outputText,
-			{
-				exports,
-				require: (name: string) => {
-					assert.ok(name in mocks, name);
-					return mocks[name];
-				},
-			},
-		);
-		for (const worn of [null, true, false]) {
-			for (const disabled of [false, true]) {
+test("actual Today daily choices offer only Yes/No, unknown selects neither, and disabled callbacks cannot write", () => {
+	for (const worn of [null, true, false]) {
+		for (const disabled of [false, true]) {
+			for (const choice of [true, false]) {
+				const h = homeHarness();
+				h.state.daily.worn = worn;
 				const writes: boolean[] = [];
-				const tree = exports.DailyChoice({
-					worn,
+				const tree = h.exports.DailyLogSection({
+					state: h.state,
+					eyes: h.state.eyes,
 					disabled,
 					onLog: (value: boolean) => writes.push(value),
 				});
-				const buttons = elements(tree).filter(
-					(node) => node.type === (platform === "web" ? "Pressable" : "Button"),
-				);
+				const buttons = elements(tree).filter((node) => node.type === "Button");
 				assert.deepEqual(
-					buttons.map((node) =>
-						platform === "web" ? text(node) : node.props.label,
-					),
+					buttons.map((node) => node.props.label),
 					["Yes", "No"],
 				);
-				buttons.forEach((button, index) => {
-					const selected = worn === (index === 0);
-					if (platform === "web") {
-						assert.equal(button.props.accessibilityRole, "radio");
-						assert.equal(
-							(button.props.accessibilityState as { checked: boolean }).checked,
-							selected,
-						);
-					} else {
-						assert.equal(
-							button.props.variant,
-							selected ? "filled" : "outlined",
-						);
-						const mods = button.props.modifiers as {
-							selected?: boolean;
-							value?: string;
-						}[];
-						assert.equal(
-							platform === "android"
-								? mods[0].selected
-								: mods[2].value === "Selected",
-							selected,
-						);
-					}
-					assert.equal(button.props.disabled, disabled);
-					invoke(button, "onPress");
-				});
-				assert.deepEqual(writes, disabled ? [] : [true, false]);
+				assert.deepEqual(
+					buttons.map((node) => node.props.selected),
+					[worn === true, worn === false],
+				);
+				assert.ok(buttons.every((node) => node.props.disabled === disabled));
+				invoke(find(tree, "Button", choice ? "Yes" : "No"), "onPress");
+				invoke(find(tree, "Button", choice ? "No" : "Yes"), "onPress");
+				assert.deepEqual(
+					writes,
+					disabled ? [] : [choice],
+					"actual optimistic hook blocks a duplicate dispatch before rerender",
+				);
 			}
 		}
 	}
 });
-
 test("daily choice preserves unknown, Yes and No and forwards explicit writes", () => {
 	const harness = homeHarness();
 	const logged: boolean[] = [];
 	const render = () =>
 		harness.exports.DailyLogSection({
 			state: harness.state,
+			eyes: harness.state.eyes,
 			disabled: false,
 			onLog: (worn: boolean) => logged.push(worn),
 		});
 	let card = render();
 	assert.match(text(card), /Not recorded/);
-	assert.equal(find(card, "DailyChoice").props.worn, null);
-	assert.equal(find(card, "DailyChoice").props.disabled, false);
-	invoke(find(card, "DailyChoice"), "onLog", false);
-	invoke(find(card, "DailyChoice"), "onLog", true);
-	assert.deepEqual(logged, [false, true]);
+	assert.equal(find(card, "Button", "Yes").props.selected, false);
+	assert.equal(find(card, "Button", "No").props.selected, false);
+	assert.equal(find(card, "Button", "No").props.disabled, false);
+	invoke(find(card, "Button", "No"), "onPress");
+	invoke(find(card, "Button", "Yes"), "onPress");
+	assert.deepEqual(
+		logged,
+		[false],
+		"synchronous optimistic dispatch locks duplicate writes",
+	);
 	for (const worn of [false, true]) {
 		harness.state.daily.worn = worn;
 		card = render();
-		assert.equal(find(card, "DailyChoice").props.worn, worn);
+		assert.equal(find(card, "Button", "Yes").props.selected, worn === true);
+		assert.equal(find(card, "Button", "No").props.selected, worn === false);
 		assert.match(text(card), worn ? /Recorded: Yes/ : /Recorded: No/);
 	}
 	const disabledCard = harness.exports.DailyLogSection({
 		state: harness.state,
+		eyes: harness.state.eyes,
 		disabled: true,
 		onLog: () => {},
 	});
-	assert.equal(find(disabledCard, "DailyChoice").props.disabled, true);
+	assert.equal(find(disabledCard, "Button", "Yes").props.disabled, true);
+	assert.equal(find(disabledCard, "Button", "No").props.disabled, true);
 });
-
 test("Add both retry writes only the unfinished eye for the same intent", async () => {
 	const harness = homeHarness();
 	invoke(find(harness.render(), "Button", "Add spares"), "onPress");
@@ -483,13 +428,8 @@ test("Add both retry writes only the unfinished eye for the same intent", async 
 	invoke(form, "onAdd");
 	await harness.flush();
 	harness.failRight(false);
-	assert.equal(find(harness.render(), "Host").key, 0);
 	harness.refreshPalette();
-	assert.equal(
-		find(harness.render(), "Host").key,
-		1,
-		"only native content boundary changes key",
-	);
+	// The native measured root owns any palette remount, never the AddIntent owner.
 	assert.equal(
 		find(harness.render(), "AddContactsForm").props.locked,
 		true,
@@ -525,7 +465,6 @@ test("Add both retry writes only the unfinished eye for the same intent", async 
 		),
 	);
 });
-
 test("replacement has one confirmation and cancellation does not mutate", async () => {
 	const harness = homeHarness();
 	const card = elements(harness.render()).find(

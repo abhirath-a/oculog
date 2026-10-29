@@ -189,7 +189,7 @@ export interface ComfortLog extends OwnedRecord {
 export interface PushDevice extends OwnedRecord {
 	installationId: string;
 	expoPushToken: string;
-	platform: "ios" | "android";
+	platform: "ios";
 	enabled: boolean;
 	lastSeenAt: Instant;
 }
@@ -365,7 +365,7 @@ export interface SaveRoutineResponse {
 export interface RegisterDeviceRequest {
 	installationId: string;
 	expoPushToken: string;
-	platform: "ios" | "android";
+	platform: "ios";
 	enabled: boolean;
 }
 export interface RegisterDeviceResponse {

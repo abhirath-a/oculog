@@ -79,19 +79,19 @@ test("lens route waits for readiness, redirects without an account, and keys edi
 });
 
 test("overview has grouped navigation and account rows, not schedule fields or save", () => {
-	const overview = source("components/settings/overview.tsx");
-	assert.match(overview, /<ListItem[^>]+onPress=/);
-	assert.match(overview, /supportingText=\{summary\}/);
-	assert.match(overview, /title="Account"/);
+	const overview = source("components/settings/overview-content.tsx");
+	assert.match(
+		overview,
+		/<EditorLink disabled=\{m.accountDisabled\} onEdit=\{onEdit\}/,
+	);
+	assert.match(
+		source("components/settings/editor-link.tsx"),
+		/label="Edit lens setup"/,
+	);
+	assert.match(overview, /m\.email/);
 	assert.match(overview, /label="Sign out"/);
 	assert.doesNotMatch(overview, /<Days|<DateField|Save changes|m\.save/);
-	const web = source("components/settings/overview.web.tsx");
-	assert.match(
-		web,
-		/href=\{m.accountDisabled \? undefined : "\/lens-editor"\}/,
-	);
-	assert.doesNotMatch(web, /from "@expo\/ui/);
-	const settings = source("components/settings.tsx");
+	const settings = source("components/settings/screen.tsx");
 	assert.match(settings, /lensSummary\(state\)/);
 	assert.match(settings, /router\.push\("\/lens-editor"\)/);
 	assert.doesNotMatch(settings, /<SettingsForm/);

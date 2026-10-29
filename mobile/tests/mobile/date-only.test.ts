@@ -69,18 +69,10 @@ test("native presentations are isolated and don't put a calendar in form layout"
 			new URL(`../../src/components/presentation/${file}`, import.meta.url),
 			"utf8",
 		);
-	assert.match(
-		source("date-field-picker.ios.tsx"),
-		/datePickerStyle\("wheel"\)/,
-	);
-	assert.match(source("date-field-picker.ios.tsx"), /<BottomSheet/);
-	assert.match(source("date-field-picker.android.tsx"), /<DatePickerDialog/);
+	assert.match(source("date-field-picker.tsx"), /datePickerStyle\("wheel"\)/);
+	assert.match(source("date-field-picker.tsx"), /<BottomSheet/);
 	assert.doesNotMatch(
 		source("date-field.tsx"),
 		/DateTimePicker|display="inline"|settings\/calendar/,
-	);
-	assert.doesNotMatch(
-		source("date-field.web.tsx"),
-		/from "@expo\/ui|date-field-picker/,
 	);
 });

@@ -17,8 +17,8 @@ test("root gate has one deterministic authenticated destination without index co
 	);
 });
 
-test("native and web tabs are authenticated, account-keyed and labelled Today / Settings", () => {
-	for (const path of ["app/(tabs)/_layout.tsx", "app/(tabs)/_layout.web.tsx"]) {
+test("iOS tabs are authenticated, account-keyed and labelled Today / Account", () => {
+	for (const path of ["app/(tabs)/_layout.tsx"]) {
 		const layout = source(path);
 		assert.match(layout, /!store.ready/);
 		assert.match(layout, /!store.account/);
@@ -26,12 +26,12 @@ test("native and web tabs are authenticated, account-keyed and labelled Today / 
 		assert.match(layout, /name="home"/);
 		assert.match(layout, /name="settings"/);
 		assert.match(layout, /Today/);
-		assert.match(layout, /Settings/);
+		assert.match(layout, /Account/);
 	}
 	const native = source("app/(tabs)/_layout.tsx");
-	assert.match(native, /expo-router\/unstable-native-tabs/);
-	assert.match(native, /Trigger.Icon sf="house.fill" md="home"/);
-	assert.match(native, /Trigger.Icon sf="gear" md="settings"/);
+	assert.match(native, /expo-router\/native-tabs/);
+	assert.match(native, /Trigger.Icon sf="house.fill"/);
+	assert.match(native, /Trigger.Icon sf="gear"/);
 });
 
 test("root provider has login only and obsolete email routes are absent", () => {
@@ -58,28 +58,6 @@ test("navigation keeps OS theme semantics while sharing presentation colors and 
 	assert.doesNotMatch(source("app/(tabs)/_layout.tsx"), /backgroundColor=/);
 });
 
-test("web tabs are contained on desktop with generous labelled click targets", () => {
-	const web = source("app/(tabs)/_layout.web.tsx");
-	assert.match(web, /useWindowDimensions/);
-	assert.match(web, /maxWidth: 1200/);
-	assert.match(
-		web,
-		/minHeight: desktop \? 64 \+ insets.top : 66 \+ insets.bottom/,
-	);
-	assert.match(web, /minHeight: 48/);
-	assert.match(web, /tabBarAllowFontScaling: true/);
-	assert.match(web, /tabBarIcon:/);
-	assert.match(web, /title: "Today"/);
-	assert.match(web, /title: "Settings"/);
-});
-
-test("web tab row uses available width and grows for enlarged labels", () => {
-	const web = source("app/(tabs)/_layout.web.tsx");
-	assert.match(web, /tabBarStyle:\s*\{[\s\S]*?height: "auto"/);
-	assert.match(web, /tabBarStyle:\s*\{[\s\S]*?alignItems: "stretch"/);
-	assert.match(web, /tabBarLabelStyle:\s*\{[^}]*flexShrink: 0/);
-});
-
 test("focused editor and optional onboarding have router-owned titles outside tabs", () => {
 	const root = source("app/_layout.tsx");
 	for (const route of ["lens-editor", "onboarding"]) {
@@ -88,41 +66,39 @@ test("focused editor and optional onboarding have router-owned titles outside ta
 		)?.[1];
 		assert.ok(options, `${route} has router-owned options`);
 		assert.match(options, /\btitle:\s*"Lens setup"/);
-		assert.match(options, /\bheaderShown:\s*true\b/);
+		assert.match(
+			options,
+			new RegExp(
+				`\\bheaderShown:\\s*${route === "onboarding" ? "false" : "true"}\\b`,
+			),
+		);
 		assert.match(options, /\bheaderBackButtonMenuEnabled:\s*false\b/);
-		for (const path of [
-			"app/(tabs)/_layout.tsx",
-			"app/(tabs)/_layout.web.tsx",
-		]) {
+		for (const path of ["app/(tabs)/_layout.tsx"]) {
 			assert.doesNotMatch(source(path), new RegExp(`name="${route}"`));
 		}
 	}
-	assert.match(root, /name="\(tabs\)" options=\{\{ headerShown: false \}\}/);
+	assert.match(root, /name="\(tabs\)"\s+options=\{\{[^}]*headerShown: false/);
 	assert.doesNotMatch(root, /ToolbarView|animation:/);
-	assert.match(source("app/(tabs)/_layout.web.tsx"), /animation: "none"/);
 });
 
 test("native editor retains platform fields, feedback and a single native scroll owner", () => {
-	const native = source("components/settings/form.tsx");
-	assert.match(native, /@expo\/ui/);
-	assert.match(native, /<Host key=\{paletteEpoch\}/);
-	assert.match(native, /<FieldGroup.Section/);
-	assert.match(native, /<Switch/);
-	assert.match(native, /<DateField/);
-	assert.match(native, /accessibilityLiveRegion=/);
-	assert.match(native, /<NativeFields>/);
-	assert.doesNotMatch(
-		native,
-		/<ScrollView|<RNHostView matchContents|<Field\s|<Txt|<Page/,
-	);
-	const android = source("components/settings/native-fields.android.tsx");
-	assert.match(android, /<Column/);
-	assert.match(android, /verticalScroll\(\)/);
-	assert.doesNotMatch(android, /<LazyColumn|<FlatList|<ScrollView/);
+	const native = source("components/settings/editor-form.tsx");
+	assert.match(native, /<OnboardingPage/);
+	assert.match(native, /<LensSetupFields/);
+	assert.match(native, /<TodayFeedback/);
+	const page = source("components/onboarding/page.tsx");
+	assert.equal((page.match(/<Host\b/g) ?? []).length, 1);
+	assert.equal((page.match(/<ScrollView\b/g) ?? []).length, 1);
+	assert.doesNotMatch(native, /<ScrollView|<Host|Toolbar/);
 });
 
-test("native tabs remain exactly two peers without custom transitions or toolbar APIs", () => {
+test("iOS tabs retain the five product destinations without custom transitions or toolbars", () => {
 	const native = source("app/(tabs)/_layout.tsx");
-	assert.equal((native.match(/<NativeTabs.Trigger name=/g) ?? []).length, 2);
+	assert.deepEqual(
+		[...native.matchAll(/<NativeTabs.Trigger name="([^"]+)"/g)].map(
+			(m) => m[1],
+		),
+		["home", "logs", "advice", "learn", "settings"],
+	);
 	assert.doesNotMatch(native, /ToolbarView|animation|Reanimated/);
 });

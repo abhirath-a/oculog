@@ -97,9 +97,16 @@ export function authScreen(
 			router: { replace: (path: string) => redirects.push(path) },
 		},
 		"react-native": {
+			StyleSheet: { create: (value: unknown) => value },
+			PlatformColor: (value: string) => value,
+			useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
 			Platform: { OS: "ios" },
 			View: "View",
 			Keyboard: { dismiss: () => {} },
+		},
+		"../components/auth/auth-surface": {
+			AuthCard: "AuthCard",
+			AuthModePicker: "Segments",
 		},
 		"../components/auth/form-field": { FormField: "Field" },
 		"../components/auth/intro": { AuthIntro: "Intro" },
@@ -111,6 +118,11 @@ export function authScreen(
 		},
 		"../components/presentation/theme": {
 			usePresentationPaletteHold: () => {},
+			usePresentationTheme: () => ({
+				background: "white",
+				text: "black",
+				secondary: "gray",
+			}),
 		},
 		"../components/ui": {
 			Button: "Button",
@@ -231,6 +243,9 @@ export async function initializedStore(
 			jsx: (type: unknown, props: unknown) => ({ type, props }),
 		},
 		"react-native": {
+			StyleSheet: { create: (value: unknown) => value },
+			PlatformColor: (value: string) => value,
+			useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
 			AppState: {
 				currentState: "background",
 				addEventListener: (

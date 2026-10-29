@@ -55,6 +55,10 @@ function harness(mode = "login", token = "", busy = false) {
 			RNHostView: "RNHostView",
 			FieldGroup: { Section: "Section" },
 		},
+		"../components/auth/auth-surface": {
+			AuthCard: "AuthCard",
+			AuthModePicker: "Segments",
+		},
 		"../components/auth/form-field": { FormField: "Field" },
 		"../components/presentation": {
 			ScreenFrame: "ScreenFrame",
@@ -64,6 +68,11 @@ function harness(mode = "login", token = "", busy = false) {
 		},
 		"../components/presentation/theme": {
 			usePresentationPaletteHold: () => {},
+			usePresentationTheme: () => ({
+				background: "white",
+				text: "black",
+				secondary: "gray",
+			}),
 		},
 		"@expo/ui/community/segmented-control": {
 			__esModule: true,
@@ -90,6 +99,9 @@ function harness(mode = "login", token = "", busy = false) {
 			},
 		},
 		"react-native": {
+			StyleSheet: { create: (value: unknown) => value },
+			PlatformColor: (value: string) => value,
+			useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
 			View: "View",
 			Text: "Text",
 			Platform: { OS: "ios" },
@@ -179,11 +191,11 @@ test("native auth tree keeps semantic field labels and secure autofill metadata"
 		assert.equal(tree.type, "ScreenFrame");
 		assert.equal(tree.props.scrollOwner, "frame");
 		assert.equal(tree.props.title, "");
-		const heading = elements(tree).find((node) => node.type === "AuthIntro");
-		assert.equal(
-			heading?.props.title,
-			mode === "login" ? "Sign in" : "Create account",
+		const heading = elements(tree).find(
+			(node) =>
+				node.type === "Text" && String(node.props.children).includes("\n"),
 		);
+		assert.ok(heading, "native task heading");
 		assert.ok(elements(tree).some((node) => node.type === "Field"));
 		assert.equal(
 			elements(tree).some((node) => node.type === "Card"),
@@ -201,22 +213,20 @@ test("native auth tree keeps semantic field labels and secure autofill metadata"
 			primary[0].props.title,
 			mode === "login" ? "Sign in" : "Create account",
 		);
-		const switchMode = elements(tree).find(
-			(node) => node.type === "Button" && node.props.variant === "text",
-		);
+		const switchMode = elements(tree).find((node) => node.type === "Segments");
+		assert.equal(switchMode?.props.mode, mode);
 		assert.equal(
-			switchMode?.props.title,
-			mode === "login" ? "Create account" : "Sign in",
+			field(tree, "Email address").props.keyboardType,
+			"email-address",
 		);
-		assert.equal(field(tree, "Email").props.keyboardType, "email-address");
-		assert.equal(field(tree, "Email").props.autoComplete, "email");
+		assert.equal(field(tree, "Email address").props.autoComplete, "email");
 		assert.equal(field(tree, "Password").props.secure, true);
 		assert.equal(
 			field(tree, "Password").props.autoComplete,
 			mode === "login" ? "current-password" : "new-password",
 		);
 		if (mode === "register") {
-			assert.equal(field(tree, "Name").props.autoComplete, "name");
+			assert.equal(field(tree, "Your name").props.autoComplete, "name");
 			assert.equal(field(tree, "Confirm password").props.secure, true);
 		}
 	}
@@ -225,8 +235,8 @@ test("native auth tree keeps semantic field labels and secure autofill metadata"
 test("palette refresh preserves controlled auth drafts, mode, and request behavior", async () => {
 	const auth = harness("register");
 	for (const [label, value] of [
-		["Name", "A person"],
-		["Email", "person@example.com"],
+		["Your name", "A person"],
+		["Email address", "person@example.com"],
 		["Password", "secret123"],
 		["Confirm password", "secret123"],
 	])
@@ -236,15 +246,15 @@ test("palette refresh preserves controlled auth drafts, mode, and request behavi
 	const after = auth.render();
 	assert.equal(after.key, undefined, "screen owner is never keyed");
 	for (const [label, value] of [
-		["Name", "A person"],
-		["Email", "person@example.com"],
+		["Your name", "A person"],
+		["Email address", "person@example.com"],
 		["Password", "secret123"],
 		["Confirm password", "secret123"],
 	])
 		assert.equal(field(after, label).props.value, value);
 	assert.equal(
-		elements(after).find((node) => node.type === "AuthIntro")?.props.title,
-		"Create account",
+		elements(after).find((node) => node.type === "Segments")?.props.mode,
+		"register",
 	);
 	assert.equal(auth.calls.length, 0, "refresh cannot start auth requests");
 	submit(after);
@@ -266,9 +276,7 @@ test("busy auth locks fields, submission and mode navigation", () => {
 	))
 		assert.equal(node.props.disabled, true);
 	assert.equal(
-		elements(tree).find(
-			(node) => node.type === "Button" && node.props.variant === "text",
-		)?.props.disabled,
+		elements(tree).find((node) => node.type === "Segments")?.props.disabled,
 		true,
 	);
 });
@@ -276,7 +284,11 @@ test("busy auth locks fields, submission and mode navigation", () => {
 test("login and signup authenticate immediately without verification fields", async () => {
 	for (const mode of ["login", "register"]) {
 		const auth = harness(mode);
-		invoke(field(auth.render(), "Email"), "onChange", " person@example.com ");
+		invoke(
+			field(auth.render(), "Email address"),
+			"onChange",
+			" person@example.com ",
+		);
 		invoke(field(auth.render(), "Password"), "onChange", "secret123");
 		if (mode === "register")
 			invoke(field(auth.render(), "Confirm password"), "onChange", "secret123");
@@ -305,7 +317,11 @@ test("short passwords and mismatched registration confirmation cannot submit", a
 		["secret123", "different"],
 	]) {
 		const auth = harness("register");
-		invoke(field(auth.render(), "Email"), "onChange", "person@example.com");
+		invoke(
+			field(auth.render(), "Email address"),
+			"onChange",
+			"person@example.com",
+		);
 		invoke(field(auth.render(), "Password"), "onChange", password);
 		invoke(field(auth.render(), "Confirm password"), "onChange", repeat);
 		submit(auth.render());
@@ -323,27 +339,24 @@ test("short passwords and mismatched registration confirmation cannot submit", a
 test("footer changes task, preserves name and email, and clears both passwords", () => {
 	const auth = harness("register");
 	for (const [label, value] of [
-		["Name", "A person"],
-		["Email", "person@example.com"],
+		["Your name", "A person"],
+		["Email address", "person@example.com"],
 		["Password", "secret123"],
 		["Confirm password", "secret123"],
 	]) {
 		invoke(field(auth.render(), label), "onChange", value);
 	}
 	const switchMode = () =>
-		elements(auth.render()).find(
-			(node) => node.type === "Button" && node.props.variant === "text",
-		);
-	invoke(switchMode()!, "onPress");
+		elements(auth.render()).find((node) => node.type === "Segments");
+	invoke(switchMode()!, "onChange", "login");
+	assert.equal(switchMode()?.props.mode, "login");
 	assert.equal(
-		elements(auth.render()).find((node) => node.type === "AuthIntro")?.props
-			.title,
-		"Sign in",
+		field(auth.render(), "Email address").props.value,
+		"person@example.com",
 	);
-	assert.equal(field(auth.render(), "Email").props.value, "person@example.com");
 	assert.equal(field(auth.render(), "Password").props.value, "");
-	invoke(switchMode()!, "onPress");
-	assert.equal(field(auth.render(), "Name").props.value, "A person");
+	invoke(switchMode()!, "onChange", "register");
+	assert.equal(field(auth.render(), "Your name").props.value, "A person");
 	assert.equal(field(auth.render(), "Confirm password").props.value, "");
 	assert.equal(auth.calls.length, 0);
 });

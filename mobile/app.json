@@ -4,12 +4,31 @@
 		"slug": "oculog",
 		"scheme": "oculog",
 		"version": "1.0.0",
+		"platforms": ["ios"],
 		"orientation": "default",
 		"userInterfaceStyle": "automatic",
-		"plugins": ["expo-router", "expo-secure-store"],
-		"ios": { "bundleIdentifier": "app.oculog.mobile", "supportsTablet": true },
-		"android": { "package": "app.oculog.mobile" },
-		"web": { "bundler": "metro" },
-		"experiments": { "typedRoutes": true, "reactCompiler": true }
+		"plugins": [
+			"expo-router",
+			"expo-secure-store",
+			"expo-sharing",
+			"expo-status-bar"
+		],
+		"ios": {
+			"bundleIdentifier": "app.oculog.mobile",
+			"supportsTablet": true,
+			"infoPlist": {
+				"NSCameraUsageDescription": "Allow Oculog to scan your contact lens prescription on this iPhone. Prescription images are processed on-device and are not uploaded.",
+				"ITSAppUsesNonExemptEncryption": false
+			}
+		},
+		"experiments": {
+			"typedRoutes": true,
+			"reactCompiler": true
+		},
+		"extra": {
+			"eas": {
+				"projectId": "d4bdbb4c-7817-4321-8871-787c6feda0ec"
+			}
+		}
 	}
 }

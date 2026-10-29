@@ -12,6 +12,7 @@ export type HomeContentProps = {
 	onReplace: (eye: Eye) => void;
 	onSettings: () => void;
 	onAdd: () => void;
+	onHistory?: () => void;
 };
 
 /** Presentation only: dates and countdowns remain authoritative server values. */

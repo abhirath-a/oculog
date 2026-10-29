@@ -21,8 +21,8 @@ const dimensions = new Set([
 	"borderWidth",
 ]);
 
-// Inspect the actual source boundary, not a mocked native component that accepts
-// strings. Expo's universal native mapper casts dimensions; it does not resolve %.
+// Inspect source boundaries. The iOS universal layout mapper resolves percentage
+// width/height; other dimensions still require numeric point values.
 function invalidDimensions(source: string): string[] {
 	const file = ts.createSourceFile(
 		"component.tsx",
@@ -65,7 +65,11 @@ function invalidDimensions(source: string): string[] {
 				ts.forEachChild(value, inspectValue);
 			}
 			inspectValue(node.initializer);
-			if (strings.length)
+			const name = node.name.getText(file).replace(/["']/g, "");
+			const supportedPercent =
+				["width", "height"].includes(name) &&
+				strings.every((value) => /^["']\d+(?:\.\d+)?%["']$/.test(value));
+			if (strings.length && !supportedPercent)
 				failures.push(`${node.name.getText(file)}: ${strings.join(", ")}`);
 		}
 		ts.forEachChild(node, inspectStyle);
@@ -90,12 +94,12 @@ function invalidDimensions(source: string): string[] {
 	return failures;
 }
 
-test("dimension guard rejects native percentage styles but preserves RN bridge percentages", () => {
+test("iOS dimension guard accepts supported percentages but rejects unsupported string dimensions", () => {
 	assert.deepEqual(
 		invalidDimensions(
-			'import { Button as NativeButton, Host } from "@expo/ui"; const x = <Host style={{width: "100%"}}><NativeButton style={fullWidth ? {width: "100%"} : {}} /></Host>;',
+			'import { Button as NativeButton, Host } from "@expo/ui"; const x = <Host style={{width: "100%"}}><NativeButton style={fullWidth ? {padding: "100%"} : {}} /></Host>;',
 		),
-		['width: "100%"'],
+		['padding: "100%"'],
 	);
 	assert.deepEqual(
 		invalidDimensions(
@@ -105,7 +109,7 @@ test("dimension guard rejects native percentage styles but preserves RN bridge p
 	);
 });
 
-test("native universal components never pass string dimensions to Compose/SwiftUI", () => {
+test("native universal components use only supported iOS dimensions", () => {
 	const root = new URL("../../src/", import.meta.url);
 	const failures: string[] = [];
 	for (const path of readdirSync(root, { recursive: true })) {

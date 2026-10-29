@@ -1,0 +1,226 @@
+{
+  "offset_units": "Unicode code points in downloaded text, not corpus chunk offsets",
+  "provenance": "Official public page snapshots checked by implementation agent; no independent clinical/human review",
+  "evidence": [
+    {
+      "case_id": "en-hands",
+      "document_id": "cdc-prevent",
+      "url": "https://www.cdc.gov/contact-lenses/prevention/index.html",
+      "source_retrieved_at": "2026-10-23T04:04:04.915713+00:00",
+      "source_raw_sha256": "a73b2e66448f3e81e793e474ef18e9ef8caaa1db26ec4c2cec01713a44555bfa",
+      "source_extracted_text_sha256": "8ac16c9eae11350c7d397822174f2af6f4a70a685b1e58de4ebe4b9d623df793",
+      "quotation_sha256": "15b65003fd2e6bdaf1026ff5994053abaae33dc0ec53b29afb3589eb03415f62",
+      "start_in_downloaded_text": 2162,
+      "end_in_downloaded_text": 2227
+    },
+    {
+      "case_id": "en-water",
+      "document_id": "cdc-prevent",
+      "url": "https://www.cdc.gov/contact-lenses/prevention/index.html",
+      "source_retrieved_at": "2026-10-23T04:04:04.915713+00:00",
+      "source_raw_sha256": "a73b2e66448f3e81e793e474ef18e9ef8caaa1db26ec4c2cec01713a44555bfa",
+      "source_extracted_text_sha256": "8ac16c9eae11350c7d397822174f2af6f4a70a685b1e58de4ebe4b9d623df793",
+      "quotation_sha256": "c0a44beb09cc3456dfcaef4903106b5e41cb301f77ed77e24f6e2cfb1429351a",
+      "start_in_downloaded_text": 2332,
+      "end_in_downloaded_text": 2393
+    },
+    {
+      "case_id": "en-sleep",
+      "document_id": "cdc-prevent",
+      "url": "https://www.cdc.gov/contact-lenses/prevention/index.html",
+      "source_retrieved_at": "2026-10-23T04:04:04.915713+00:00",
+      "source_raw_sha256": "a73b2e66448f3e81e793e474ef18e9ef8caaa1db26ec4c2cec01713a44555bfa",
+      "source_extracted_text_sha256": "8ac16c9eae11350c7d397822174f2af6f4a70a685b1e58de4ebe4b9d623df793",
+      "quotation_sha256": "f79972e6f6cc03cddb87c6f43e4445d36b5512751554483d47a583fcd7b2df6c",
+      "start_in_downloaded_text": 2094,
+      "end_in_downloaded_text": 2161
+    },
+    {
+      "case_id": "en-case",
+      "document_id": "cdc-prevent",
+      "url": "https://www.cdc.gov/contact-lenses/prevention/index.html",
+      "source_retrieved_at": "2026-10-23T04:04:04.915713+00:00",
+      "source_raw_sha256": "a73b2e66448f3e81e793e474ef18e9ef8caaa1db26ec4c2cec01713a44555bfa",
+      "source_extracted_text_sha256": "8ac16c9eae11350c7d397822174f2af6f4a70a685b1e58de4ebe4b9d623df793",
+      "quotation_sha256": "4c052406f86d15ae504b12c50a08df757f2b5fdf62df128ac4ed0483d4782b6f",
+      "start_in_downloaded_text": 2643,
+      "end_in_downloaded_text": 2695
+    },
+    {
+      "case_id": "en-clean",
+      "document_id": "cdc-prevent",
+      "url": "https://www.cdc.gov/contact-lenses/prevention/index.html",
+      "source_retrieved_at": "2026-10-23T04:04:04.915713+00:00",
+      "source_raw_sha256": "a73b2e66448f3e81e793e474ef18e9ef8caaa1db26ec4c2cec01713a44555bfa",
+      "source_extracted_text_sha256": "8ac16c9eae11350c7d397822174f2af6f4a70a685b1e58de4ebe4b9d623df793",
+      "quotation_sha256": "77c8c02cb315483d717b292688748ab6c5dc765969c51395797eb976d0fe5c3f",
+      "start_in_downloaded_text": 2460,
+      "end_in_downloaded_text": 2508
+    },
+    {
+      "case_id": "en-saline",
+      "document_id": "cdc-clean",
+      "url": "https://www.cdc.gov/contact-lenses/about/about-cleaning-disinfecting-and-storing-contact-lenses.html",
+      "source_retrieved_at": "2026-10-23T04:04:35.298360+00:00",
+      "source_raw_sha256": "21292e293959f9e092bddb48c3a6d1ae85d830bd54f4d0e3d569862fe4519052",
+      "source_extracted_text_sha256": "204045b36e8c068c38a3193f9ad51cc801c31748f230eb34ade7db871773e59e",
+      "quotation_sha256": "d6e89c09c7da13dd9648aac98a2bca2825a93b07fa8a40d04b0a0800c8307da5",
+      "start_in_downloaded_text": 3172,
+      "end_in_downloaded_text": 3222
+    },
+    {
+      "case_id": "en-peroxide",
+      "document_id": "fda-peroxide",
+      "url": "https://www.fda.gov/medical-devices/contact-lenses/hydrogen-peroxide-solution",
+      "source_retrieved_at": "2026-10-23T04:04:34.310398+00:00",
+      "source_raw_sha256": "3924eacd54acfb0280284122d91302538043724cd0bdde57977b2289ffcb57e7",
+      "source_extracted_text_sha256": "e172ced090e2545e6755ca04dd4326ae195011560c55ea444e6379a80065c03e",
+      "quotation_sha256": "0c60faaee1b7ba4789eddb55656d241b5e3b5b7c1bc7b93168d2b76e8b240119",
+      "start_in_downloaded_text": 4152,
+      "end_in_downloaded_text": 4232
+    },
+    {
+      "case_id": "en-expiry",
+      "document_id": "fda-solutions",
+      "url": "https://www.fda.gov/medical-devices/contact-lenses/contact-lens-solutions-and-products",
+      "source_retrieved_at": "2026-10-23T04:04:34.310768+00:00",
+      "source_raw_sha256": "bdc45ce9c66516fcccd1e3c33708b426ab10bd2eb110cbbea9e743018bed82ee",
+      "source_extracted_text_sha256": "725900b4ec842f3008c11ee1fa17f3cf43df8cd5a7f73de2512cef37164a5139",
+      "quotation_sha256": "dc1cabd96b88f78a31d789f3d83fe368d101b2bbd1d80ef4d58baa0b02848019",
+      "start_in_downloaded_text": 2944,
+      "end_in_downloaded_text": 3031
+    },
+    {
+      "case_id": "en-daily",
+      "document_id": "nei-contacts",
+      "url": "https://www.nei.nih.gov/eye-health-information/healthy-vision/contact-lenses",
+      "source_retrieved_at": "2026-10-23T04:04:05.340699+00:00",
+      "source_raw_sha256": "984cc33919864b6eee997e1788a363e175cb08a2feb733f7507615fcdab887d8",
+      "source_extracted_text_sha256": "61904227d989bbed0cf6abbf1ba578ded05699d5212e269e62cde34d010f9e1d",
+      "quotation_sha256": "a488ce84345d6487ed5eaf0c0e7bd8effdff1af2c2b2d81d0609a9aca3c510ae",
+      "start_in_downloaded_text": 3390,
+      "end_in_downloaded_text": 3468
+    },
+    {
+      "case_id": "en-devices",
+      "document_id": "cdc-care",
+      "url": "https://www.cdc.gov/contact-lenses/about/index.html",
+      "source_retrieved_at": "2026-10-23T04:04:04.854923+00:00",
+      "source_raw_sha256": "bdbf3ca1e720b1171231cbee2f8369b53bd4d0605da23f0d409c1442f4736ed3",
+      "source_extracted_text_sha256": "9e02c69dee99c358c1bc06c5e7ab3d7cbb4c9ac7aa6a870dcf59f333bf44301c",
+      "quotation_sha256": "a60fe41c83c230af4538b458371a31df6dd1b447cc7cfe55ea2d6951f379e444",
+      "start_in_downloaded_text": 1698,
+      "end_in_downloaded_text": 1733
+    },
+    {
+      "case_id": "en-exam",
+      "document_id": "nei-exam",
+      "url": "https://www.nei.nih.gov/eye-health-information/healthy-vision/finding-eye-doctor/get-dilated-eye-exam",
+      "source_retrieved_at": "2026-10-23T04:04:05.274331+00:00",
+      "source_raw_sha256": "c7e8f1d4edbff55d0553b09f1241a60c7f2314edd3325723d78187c32d9c99e0",
+      "source_extracted_text_sha256": "84b7eb4bbec132fdaf77910b8b3295bd0b3aa6d428dc77b25779f98afbda2933",
+      "quotation_sha256": "53ea1b065e9ce173ff262b50e10d0c57de50b89cb7f5170d77b3afc4273233f3",
+      "start_in_downloaded_text": 2837,
+      "end_in_downloaded_text": 2896
+    },
+    {
+      "case_id": "en-health",
+      "document_id": "nei-healthy",
+      "url": "https://www.nei.nih.gov/eye-health-information/healthy-vision/how-eyes-work/keep-your-eyes-healthy",
+      "source_retrieved_at": "2026-10-23T04:04:05.569257+00:00",
+      "source_raw_sha256": "f72adbabf26e6f4e071b96919891d1e1832c3fed5271ab86c77d0a3e5211eb52",
+      "source_extracted_text_sha256": "be38b3bb623bfcfbf8dfb9191d0bb8309b8737d62f8be703126dfdc5d60458cf",
+      "quotation_sha256": "4e4ae3198c92d4267dc55e24a06db968bb2d8a7881cb01285bf35faee65d5372",
+      "start_in_downloaded_text": 1415,
+      "end_in_downloaded_text": 1490
+    },
+    {
+      "case_id": "es-hands",
+      "document_id": "cdc-prevent-es",
+      "url": "https://www.cdc.gov/contact-lenses/es/prevention/prevencion-de-infecciones-de-los-ojos-al-usar-lentes-de-contacto.html",
+      "source_retrieved_at": "2026-10-23T04:07:14.904305+00:00",
+      "source_raw_sha256": "5cb5daef8a27cc9143234e6d0d64539aa5a8468c87aee0f55aab2578e34fa1fd",
+      "source_extracted_text_sha256": "53df14e53385703a5f4969d18b203d27e8c2946be58fa18592738ee2a907d1f3",
+      "quotation_sha256": "19d57fe440917fc8baa712c5d4c08eba142996cb302fde43dfb6fbef529b15b8",
+      "start_in_downloaded_text": 2670,
+      "end_in_downloaded_text": 2739
+    },
+    {
+      "case_id": "es-water",
+      "document_id": "cdc-prevent-es",
+      "url": "https://www.cdc.gov/contact-lenses/es/prevention/prevencion-de-infecciones-de-los-ojos-al-usar-lentes-de-contacto.html",
+      "source_retrieved_at": "2026-10-23T04:07:14.904305+00:00",
+      "source_raw_sha256": "5cb5daef8a27cc9143234e6d0d64539aa5a8468c87aee0f55aab2578e34fa1fd",
+      "source_extracted_text_sha256": "53df14e53385703a5f4969d18b203d27e8c2946be58fa18592738ee2a907d1f3",
+      "quotation_sha256": "c3bbf562c6873f649882d66862599a783bf4da4ffbf932a91e44ac54bcdc297c",
+      "start_in_downloaded_text": 2868,
+      "end_in_downloaded_text": 2945
+    },
+    {
+      "case_id": "es-sleep",
+      "document_id": "cdc-prevent-es",
+      "url": "https://www.cdc.gov/contact-lenses/es/prevention/prevencion-de-infecciones-de-los-ojos-al-usar-lentes-de-contacto.html",
+      "source_retrieved_at": "2026-10-23T04:07:14.904305+00:00",
+      "source_raw_sha256": "5cb5daef8a27cc9143234e6d0d64539aa5a8468c87aee0f55aab2578e34fa1fd",
+      "source_extracted_text_sha256": "53df14e53385703a5f4969d18b203d27e8c2946be58fa18592738ee2a907d1f3",
+      "quotation_sha256": "dcd3240ebcaa395690e12827f900d3eccbc7556260f6bbc91a97e15cfd740237",
+      "start_in_downloaded_text": 2581,
+      "end_in_downloaded_text": 2669
+    },
+    {
+      "case_id": "es-case",
+      "document_id": "cdc-prevent-es",
+      "url": "https://www.cdc.gov/contact-lenses/es/prevention/prevencion-de-infecciones-de-los-ojos-al-usar-lentes-de-contacto.html",
+      "source_retrieved_at": "2026-10-23T04:07:14.904305+00:00",
+      "source_raw_sha256": "5cb5daef8a27cc9143234e6d0d64539aa5a8468c87aee0f55aab2578e34fa1fd",
+      "source_extracted_text_sha256": "53df14e53385703a5f4969d18b203d27e8c2946be58fa18592738ee2a907d1f3",
+      "quotation_sha256": "36f72047e3883bed51e7c85aa717564254e1029d72a2735a10923b38dd8e6606",
+      "start_in_downloaded_text": 3266,
+      "end_in_downloaded_text": 3326
+    },
+    {
+      "case_id": "es-clean",
+      "document_id": "cdc-prevent-es",
+      "url": "https://www.cdc.gov/contact-lenses/es/prevention/prevencion-de-infecciones-de-los-ojos-al-usar-lentes-de-contacto.html",
+      "source_retrieved_at": "2026-10-23T04:07:14.904305+00:00",
+      "source_raw_sha256": "5cb5daef8a27cc9143234e6d0d64539aa5a8468c87aee0f55aab2578e34fa1fd",
+      "source_extracted_text_sha256": "53df14e53385703a5f4969d18b203d27e8c2946be58fa18592738ee2a907d1f3",
+      "quotation_sha256": "2ee4f5b0ecd323189d9b7310853d5213dc311e13b1fce1929cce88b255a45ec5",
+      "start_in_downloaded_text": 3043,
+      "end_in_downloaded_text": 3098
+    },
+    {
+      "case_id": "es-daily",
+      "document_id": "nei-contacts-es",
+      "url": "https://www.nei.nih.gov/espanol/informacion-sobre-la-salud-ocular/vision-saludable/lentes-de-contacto",
+      "source_retrieved_at": "2026-10-23T04:07:14.904939+00:00",
+      "source_raw_sha256": "5e5619f5c6d494c9b5080c730027eaf5ecca0d808ad9a1e184c89956a756b5e8",
+      "source_extracted_text_sha256": "4896f8833816c12490b4b77db99481db346fd4c636d1e1cb27a345272746e431",
+      "quotation_sha256": "4c0aca5493070cc110ed1b609220d639640044796a2f4efc4783decb5afa1b9a",
+      "start_in_downloaded_text": 3530,
+      "end_in_downloaded_text": 3624
+    },
+    {
+      "case_id": "es-topup",
+      "document_id": "cdc-prevent-es",
+      "url": "https://www.cdc.gov/contact-lenses/es/prevention/prevencion-de-infecciones-de-los-ojos-al-usar-lentes-de-contacto.html",
+      "source_retrieved_at": "2026-10-23T04:07:14.904305+00:00",
+      "source_raw_sha256": "5cb5daef8a27cc9143234e6d0d64539aa5a8468c87aee0f55aab2578e34fa1fd",
+      "source_extracted_text_sha256": "53df14e53385703a5f4969d18b203d27e8c2946be58fa18592738ee2a907d1f3",
+      "quotation_sha256": "f526b195d8a42035a56749de0ff01e7074614050de6ca399946cb53375e2212a",
+      "start_in_downloaded_text": 3099,
+      "end_in_downloaded_text": 3160
+    },
+    {
+      "case_id": "es-store",
+      "document_id": "nei-contacts-es",
+      "url": "https://www.nei.nih.gov/espanol/informacion-sobre-la-salud-ocular/vision-saludable/lentes-de-contacto",
+      "source_retrieved_at": "2026-10-23T04:07:14.904939+00:00",
+      "source_raw_sha256": "5e5619f5c6d494c9b5080c730027eaf5ecca0d808ad9a1e184c89956a756b5e8",
+      "source_extracted_text_sha256": "4896f8833816c12490b4b77db99481db346fd4c636d1e1cb27a345272746e431",
+      "quotation_sha256": "7fea78cdc626a09a82179fb3b7f3fdaaae9f8e095af63b84a12bfbb1ee395b74",
+      "start_in_downloaded_text": 4301,
+      "end_in_downloaded_text": 4361
+    }
+  ]
+}

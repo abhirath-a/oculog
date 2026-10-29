@@ -1,0 +1,7 @@
+# Optional evaluation environment only. NEVER include in backend runtime requirements.
+# Verified PyPI ragas 0.4.3 wheel SHA256:
+# ef1d75f674c294e9a6e7d8e9ad261b6bf4697dad1c9cbd1a756ba7a6b4849a38
+# Transitives are not locked here; every actual live report captures pip freeze.
+ragas==0.4.3
+# 0.4.2 removed vertexai.py, still imported by RAGAS 0.4.3 at startup.
+langchain-community==0.4.1

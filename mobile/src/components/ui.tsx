@@ -5,7 +5,6 @@ import {
 	ActivityIndicator,
 	Alert,
 	KeyboardAvoidingView,
-	Platform,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -48,7 +47,7 @@ export const styles = StyleSheet.create({
 		maxWidth: 960,
 		alignSelf: "center",
 	},
-	title: { fontSize: 26, fontWeight: "600", letterSpacing: -0.5 },
+	title: { fontSize: 28, fontWeight: "600", letterSpacing: -0.5 },
 	heading: { fontSize: 19, fontWeight: "600" },
 	text: { fontSize: 16, lineHeight: 24 },
 	small: { fontSize: 13, lineHeight: 20 },
@@ -133,13 +132,7 @@ export function Button({
 			matchContents={fullWidth ? { vertical: true } : true}
 			style={fullWidth ? { width: "100%" } : undefined}
 			ignoreSafeArea="all"
-			seedColor={
-				Platform.OS === "android"
-					? undefined
-					: danger
-						? colors.danger
-						: colors.accent
-			}
+			seedColor={danger ? colors.danger : colors.accent}
 		>
 			<ButtonControl
 				title={title}
@@ -255,7 +248,7 @@ export function Toggle({
 			key={paletteEpoch}
 			matchContents
 			ignoreSafeArea="all"
-			seedColor={Platform.OS === "android" ? undefined : colors.accent}
+			seedColor={colors.accent}
 		>
 			<SwitchControl
 				label={label}
@@ -292,17 +285,14 @@ export function Page({
 	return (
 		<KeyboardAvoidingView
 			style={[styles.page, { backgroundColor: colors.bg }]}
-			behavior={Platform.OS === "ios" ? "padding" : undefined}
+			behavior="padding"
 		>
 			<ScrollView
 				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={[
 					styles.content,
 					{
-						// Android NativeTabs owns only the bottom inset.
-						paddingTop:
-							contentPaddingTop +
-							(managedInsets && Platform.OS !== "android" ? 0 : insets.top),
+						paddingTop: contentPaddingTop + (managedInsets ? 0 : insets.top),
 						paddingBottom:
 							contentPaddingBottom + (managedInsets ? 0 : insets.bottom),
 					},
@@ -362,7 +352,6 @@ export function Page({
 	);
 }
 export async function confirm(title: string, message: string) {
-	if (Platform.OS === "web") return window.confirm(`${title}\n${message}`);
 	return new Promise<boolean>((resolve) =>
 		Alert.alert(
 			title,

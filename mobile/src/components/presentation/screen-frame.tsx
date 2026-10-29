@@ -1,6 +1,7 @@
 import type React from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BrandWordmark } from "../brand/wordmark";
 import { PresentationText } from "./text";
 import { usePresentationTheme } from "./theme";
 
@@ -9,6 +10,7 @@ export type ScreenFrameProps = {
 	subtitle?: string;
 	insetMode: "tabs" | "stack" | "standalone";
 	scrollOwner: "frame" | "content";
+	brand?: boolean;
 	children: React.ReactNode;
 };
 
@@ -23,22 +25,18 @@ export function ScreenFrame({
 	subtitle,
 	insetMode,
 	scrollOwner,
+	brand = false,
 	children,
 }: ScreenFrameProps) {
 	const theme = usePresentationTheme();
 	const insets = useSafeAreaInsets();
 	const standalone = insetMode === "standalone";
 	const top =
-		standalone ||
-		(insetMode === "tabs" &&
-			(Platform.OS === "android" || scrollOwner === "content"))
+		standalone || (insetMode === "tabs" && scrollOwner === "content")
 			? insets.top
 			: 0;
-	const bottom =
-		standalone || (insetMode === "stack" && Platform.OS === "android")
-			? insets.bottom
-			: 0;
-	const heading = (
+	const bottom = standalone ? insets.bottom : 0;
+	const headingText = (
 		<View style={{ gap: 4 }}>
 			{!!title && insetMode !== "stack" && (
 				// biome-ignore lint/a11y/useValidAriaRole: App typography role, not an ARIA role.
@@ -54,18 +52,37 @@ export function ScreenFrame({
 			)}
 		</View>
 	);
+	const heading = brand ? (
+		<View
+			style={{
+				flexDirection: "row",
+				alignItems: "center",
+				justifyContent: "space-between",
+				flexWrap: "wrap",
+				gap: 12,
+			}}
+		>
+			<View style={{ flexGrow: 1, flexShrink: 0, maxWidth: "100%" }}>
+				{headingText}
+			</View>
+			<BrandWordmark color={theme.text} />
+		</View>
+	) : (
+		headingText
+	);
 	return (
 		<KeyboardAvoidingView
-			style={{ flex: 1, backgroundColor: theme.background }}
+			style={{
+				flex: 1,
+				backgroundColor: theme.background,
+			}}
 			enabled={scrollOwner === "frame"}
-			behavior={Platform.OS === "ios" ? "padding" : undefined}
+			behavior="padding"
 		>
 			{scrollOwner === "frame" ? (
 				<ScrollView
 					keyboardShouldPersistTaps="handled"
-					keyboardDismissMode={
-						Platform.OS === "ios" ? "interactive" : "on-drag"
-					}
+					keyboardDismissMode="interactive"
 					contentInsetAdjustmentBehavior={standalone ? "never" : "automatic"}
 					contentContainerStyle={{
 						paddingLeft: 16 + insets.left,

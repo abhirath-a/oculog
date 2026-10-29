@@ -21,6 +21,12 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 from starlette.concurrency import run_in_threadpool
 
+from backend import advice, learning, wear
+from backend.education import budget as education_budget, service as education_service, chat as advice_chat
+
+# Validate the whole local corpus at import/startup, never partially serve it.
+ADVICE = advice.load_catalogue()
+
 MAX_INT = 9007199254740991
 MAX_BODY = 16384
 PREFIX = "/api/oculog/v1/simple/"
@@ -167,6 +173,7 @@ def initialize():
     with connection() as db:
         db.execute("PRAGMA journal_mode=WAL")
         db.executescript(SCHEMA)
+        db.executescript(education_budget.SCHEMA + education_service.SCHEMA + learning.SCHEMA + wear.SCHEMA)
 
 
 class AttemptLimit:
@@ -232,7 +239,7 @@ def auth_action(route, body, authorization, ip):
                 hashed = password_hash(password)
                 with transaction(db):
                     if db.execute("SELECT 1 FROM accounts WHERE email=?", (email,)).fetchone():
-                        raise Problem(400, "validation", "Account cannot be registered", {"email": "Unavailable"})
+                        raise Problem(400, "validation", "Email already in use")
                     account_id = secrets.token_hex(16)
                     db.execute("INSERT INTO accounts VALUES (?,?,?,?,?)", (account_id, email, hashed,
                                body["displayName"].strip(), body["timeZone"]))
@@ -369,7 +376,7 @@ origins = [origin.strip() for origin in origins if origin.strip()]
 if any("*" in origin for origin in origins):
     raise RuntimeError("OCULOG_CORS_ORIGINS must contain explicit origins")
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False,
-                   allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type", "Idempotency-Key"])
+                   allow_methods=["GET", "POST", "PUT"], allow_headers=["Authorization", "Content-Type", "Idempotency-Key"])
 
 
 @app.exception_handler(Problem)
@@ -468,6 +475,79 @@ async def auth_route(request: Request):
                 raise Problem(message="Logout does not accept a request body")
     return await run_in_threadpool(dispatch, auth_action, action, body, request.headers.get("authorization"),
                                   request.client.host if request.client else "unknown")
+
+
+def advice_action(body, authorization):
+    with connection() as db:
+        authenticate(db, authorization)
+    if body is None:
+        return reply(advice.catalogue(ADVICE))
+    if set(body) == {"question_id"}:
+        question_id = body["question_id"]
+        if not isinstance(question_id, str):
+            fail("question_id")
+        try:
+            return reply(advice.answer_id(ADVICE, question_id))
+        except KeyError:
+            fail("question_id", "Unknown question")
+    strict(body, ["message"])
+    message = body["message"]
+    if not isinstance(message, str) or not 1 <= len(message.strip()) <= 1000:
+        fail("message", "Use 1 to 1000 characters after trimming")
+    return reply(advice.answer_message(ADVICE, message.strip()))
+
+
+@app.get("/api/oculog/v1/advice")
+@app.post("/api/oculog/v1/advice/answer")
+async def advice_route(request: Request):
+    body = await read_body(request) if request.method == "POST" else None
+    return await run_in_threadpool(dispatch, advice_action, body, request.headers.get("authorization"))
+
+
+# Additive V2 routes are discoverable alongside the preserved V1 surface.
+@app.get("/api/oculog/v2/education")
+@app.put("/api/oculog/v2/education/consent")
+@app.post("/api/oculog/v2/education/answer")
+async def education_route(request: Request):
+    import sys
+    action = {"GET": "status", "PUT": "consent", "POST": "answer"}[request.method]
+    body = await read_body(request) if request.method != "GET" else None
+    return await run_in_threadpool(dispatch, education_service.action, action, body,
+                                  request.headers.get("authorization"), sys.modules[__name__])
+
+
+@app.get("/api/oculog/v3/advice")
+@app.put("/api/oculog/v3/advice/consent")
+@app.post("/api/oculog/v3/advice/answer")
+async def advice_chat_route(request: Request):
+    import sys
+    action = {"GET": "status", "PUT": "consent", "POST": "answer"}[request.method]
+    body = await read_body(request) if request.method != "GET" else None
+    return await run_in_threadpool(dispatch, advice_chat.action, action, body,
+                                  request.headers.get("authorization"), sys.modules[__name__])
+
+
+@app.get("/api/oculog/v2/wear/history")
+@app.post("/api/oculog/v2/wear/day")
+@app.post("/api/oculog/v2/wear/automation")
+async def wear_route(request: Request):
+    import sys
+    action = request.url.path.rsplit("/", 1)[1]
+    body = await read_body(request) if request.method == "POST" else None
+    return await run_in_threadpool(dispatch, wear.action, action, body,
+                                  request.headers.get("authorization"), request.headers.get("idempotency-key"),
+                                  list(request.query_params.multi_items()), sys.modules[__name__])
+
+
+@app.get("/api/oculog/v2/learning")
+@app.post("/api/oculog/v2/learning/answer")
+@app.post("/api/oculog/v2/learning/reset")
+async def learning_route(request: Request):
+    import sys
+    action = "status" if request.method == "GET" else request.url.path.rsplit("/", 1)[1]
+    body = await read_body(request) if request.method == "POST" else None
+    return await run_in_threadpool(dispatch, learning.action, action, body,
+                                  request.headers.get("authorization"), sys.modules[__name__])
 
 
 @app.get(PREFIX + "state")

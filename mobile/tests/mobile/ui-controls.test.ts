@@ -3,9 +3,10 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { webTypography } from "../../src/components/presentation/web-typography";
-
-type Element = { type: string; props: Record<string, unknown> };
+type Element = {
+	type: string;
+	props: Record<string, unknown>;
+};
 function jsx(type: string, props: Record<string, unknown>): Element {
 	return { type, props };
 }
@@ -30,7 +31,11 @@ function controls(
 			useRef: (value: unknown) => ({ current: value }),
 			useId: () => "field-id",
 			useImperativeHandle: (
-				ref: { current: unknown } | undefined,
+				ref:
+					| {
+							current: unknown;
+					  }
+					| undefined,
 				create: () => unknown,
 			) => {
 				if (ref) ref.current = create();
@@ -40,6 +45,7 @@ function controls(
 			Host: "Host",
 			Column: "Column",
 			RNHostView: "RNHostView",
+			Text: "NativeText",
 			Button: "NativeButton",
 			Switch: "NativeSwitch",
 			TextInput: "NativeTextInput",
@@ -51,7 +57,18 @@ function controls(
 			fillMaxWidth: () => ({ fillMaxWidth: true }),
 			padding: (...value: number[]) => ({ padding: value }),
 		},
+		"./button-action-colors": {
+			useButtonActionColors: () => ({
+				accent: "#1D655C",
+				onAccent: "#FFFFFF",
+				muted: "#8E8E93",
+			}),
+		},
 		"@expo/ui/swift-ui/modifiers": {
+			fixedSize: (value: unknown) => ({ fixedSize: value }),
+			multilineTextAlignment: (value: unknown) => ({
+				multilineTextAlignment: value,
+			}),
 			accessibilityLabel: (value: string) => ({ label: value }),
 			controlSize: (value: string) => ({ controlSize: value }),
 			font: (value: unknown) => ({ font: value }),
@@ -103,7 +120,7 @@ function controls(
 		ts.transpileModule(
 			readFileSync(
 				new URL(
-					`../../src/components/presentation/theme${platform === "android" ? ".android" : ""}.ts`,
+					`../../src/components/presentation/theme${""}.ts`,
 					import.meta.url,
 				),
 				"utf8",
@@ -126,7 +143,7 @@ function controls(
 		ts.transpileModule(
 			readFileSync(
 				new URL(
-					`../../src/components/presentation/native-field${platform === "ios" ? ".ios" : ""}.tsx`,
+					`../../src/components/presentation/native-field${""}.tsx`,
 					import.meta.url,
 				),
 				"utf8",
@@ -151,15 +168,11 @@ function controls(
 		...fieldExports,
 		ChoiceControl: "ChoiceControl",
 	};
-	mocks["./presentation/web-typography"] = { webTypography };
 	const adapterExports = {};
 	runInNewContext(
 		ts.transpileModule(
 			readFileSync(
-				new URL(
-					`../../src/components/ui-controls.${platform === "web" ? "web" : "native"}.tsx`,
-					import.meta.url,
-				),
+				new URL("../../src/components/ui-controls.tsx", import.meta.url),
 				"utf8",
 			),
 			{
@@ -218,25 +231,17 @@ function controls(
 	}
 	return exports;
 }
-
-test("platform surfaces follow the OS scheme and Android RN colors match unseeded Compose", () => {
-	for (const platform of ["ios", "android", "web"]) {
+test("iOS surfaces follow the OS scheme", () => {
+	for (const platform of ["ios"]) {
 		const light = controls(platform).useColors();
 		const dark = controls(platform, "dark").useColors();
-		assert.equal(light.bg, platform === "ios" ? "#F2F2F7" : "#FFFFFF");
-		assert.equal(dark.bg, platform === "android" ? "#121212" : "#000000");
+		assert.equal(light.bg, "#F2F2F7");
+		assert.equal(dark.bg, "#000000");
 		assert.equal(light.text, "#000000");
 		assert.equal(dark.text, "#FFFFFF");
 		assert.equal(dark.card, "#1C1C1E");
-		if (platform === "android")
-			assert.equal(
-				light.accent,
-				"#6750A4",
-				"RN inherits the unseeded Compose primary",
-			);
 	}
 });
-
 test("Page keeps content spacing separate from router-managed safe area insets", () => {
 	for (const managedInsets of [true, false]) {
 		const page = controls("ios").Page({
@@ -260,26 +265,8 @@ test("Page keeps content spacing separate from router-managed safe area insets",
 	assert.equal(padding.paddingTop, 20);
 	assert.equal(padding.paddingBottom, 28);
 });
-
-test("Android Page retains tall top cutout insets without doubling NativeTabs bottom padding", () => {
-	for (const top of [44, 48]) {
-		const page = controls("android", "light", { top, bottom: 34 }).Page({
-			title: "Home",
-			managedInsets: true,
-			contentPaddingTop: 32,
-			contentPaddingBottom: 48,
-		});
-		const scroll = page.props.children as Element;
-		const padding = (
-			scroll.props.contentContainerStyle as Record<string, number>[]
-		)[1];
-		assert.equal(padding.paddingTop, top === 48 ? 80 : 76);
-		assert.equal(padding.paddingBottom, 48);
-	}
-});
-
 test("native controls have a fresh content-sized Host at RN boundaries", () => {
-	for (const platform of ["ios", "android"]) {
+	for (const platform of ["ios"]) {
 		const ui = controls(platform);
 		const button = ui.Button({
 			title: "Save",
@@ -290,27 +277,27 @@ test("native controls have a fresh content-sized Host at RN boundaries", () => {
 		assert.equal(button.type, "Host");
 		assert.equal(button.props.matchContents, true);
 		assert.equal(button.props.ignoreSafeArea, "all");
-		assert.equal(
-			button.props.seedColor,
-			platform === "android" ? undefined : "#1D655C",
-		);
+		assert.equal(button.props.seedColor, "#1D655C");
 		const nativeButton = button.props.children as Element;
 		assert.equal(nativeButton.type, "NativeButton");
 		assert.equal(nativeButton.props.disabled, true);
-		assert.equal(nativeButton.props.label, "Save");
+		assert.equal(
+			(nativeButton.props.children as Element).props.children,
+			"Save",
+		);
 		assert.equal(nativeButton.props.variant, "outlined");
-		assert.equal(nativeButton.props.children, undefined);
-		if (platform === "ios") {
+		assert.equal((nativeButton.props.children as Element).type, "NativeText");
+		{
 			const modifiers = nativeButton.props.modifiers as {
 				controlSize?: string;
-				frame?: { minHeight: number };
+				frame?: {
+					minHeight: number;
+				};
 				tint?: string;
 			}[];
 			assert.equal(modifiers[0].controlSize, "regular");
 			assert.equal(modifiers[1].frame?.minHeight, 44);
-			assert.equal(modifiers[2].tint, "#1D655C");
-		} else {
-			assert.equal(nativeButton.props.modifiers, undefined);
+			assert.equal(modifiers[2].tint, "#8E8E93");
 		}
 		const toggle = ui.Toggle({
 			label: "Wore contacts today",
@@ -337,28 +324,18 @@ test("native controls have a fresh content-sized Host at RN boundaries", () => {
 		assert.equal(host.type, "Host");
 		assert.equal(host.props.ignoreSafeArea, "all");
 		assert.equal(
-			(host.props.matchContents as { vertical: boolean }).vertical,
+			(
+				host.props.matchContents as {
+					vertical: boolean;
+				}
+			).vertical,
 			true,
 		);
 		const input = elements(host).find(
-			(node) =>
-				node.type ===
-				(platform === "android" ? "BasicTextField" : "NativeTextInput"),
+			(node) => node.type === "NativeTextInput",
 		);
 		assert.ok(input);
-		if (platform === "android") {
-			assert.equal(input.props.visualTransformation, "password");
-			assert.equal(
-				(input.props.keyboardOptions as { imeAction: string }).imeAction,
-				"next",
-			);
-			(input.props.keyboardActions as { onNext(): void }).onNext();
-			assert.equal(submitted, 1);
-			assert.equal(
-				(input.props.keyboardOptions as { keyboardType: string }).keyboardType,
-				"password",
-			);
-		} else {
+		{
 			assert.equal(input.props.secureTextEntry, true);
 			assert.equal(input.props.style, undefined);
 			assert.deepEqual(JSON.parse(JSON.stringify(input.props.modifiers)), [
@@ -368,21 +345,29 @@ test("native controls have a fresh content-sized Host at RN boundaries", () => {
 				{ frame: { minHeight: 44 } },
 			]);
 		}
-		if (platform === "android") {
-			assert.ok(
-				(input.props.modifiers as { contentType?: string }[]).some(
-					(modifier) => modifier.contentType === "current-password",
-				),
-			);
-		} else assert.equal(input.props.autoComplete, "current-password");
+		assert.equal(input.props.autoComplete, "current-password");
 		const inputStyle = (input.props.style ?? {}) as Record<string, unknown>;
 		assert.equal(
 			inputStyle.borderWidth,
 			undefined,
 			"native forms own row decoration",
 		);
-		assert.equal((input.props.textStyle as { color: string }).color, "#000000");
-		assert.equal((input.props.value as { value: string }).value, "secret");
+		assert.equal(
+			(
+				input.props.textStyle as {
+					color: string;
+				}
+			).color,
+			"#000000",
+		);
+		assert.equal(
+			(
+				input.props.value as {
+					value: string;
+				}
+			).value,
+			"secret",
+		);
 		assert.equal((input.props.modifiers as unknown[]).length, 4);
 		assert.equal(
 			inputStyle.height,
@@ -391,16 +376,19 @@ test("native controls have a fresh content-sized Host at RN boundaries", () => {
 		);
 	}
 });
-
-test("full-width buttons constrain native content without sending RN percentages to Compose", () => {
-	for (const platform of ["android", "ios"]) {
+test("full-width buttons constrain native content using SwiftUI frames", () => {
+	for (const platform of ["ios"]) {
 		const button = controls(platform).Button({
 			title: "Sign in",
 			fullWidth: true,
 			onPress: () => {},
 		});
 		assert.equal(
-			(button.props.style as { width: string }).width,
+			(
+				button.props.style as {
+					width: string;
+				}
+			).width,
 			"100%",
 			"Host remains an RN layout boundary",
 		);
@@ -408,18 +396,15 @@ test("full-width buttons constrain native content without sending RN percentages
 		assert.equal(native.props.style, undefined);
 		const modifiers = native.props.modifiers as {
 			fillMaxWidth?: boolean;
-			frame?: { maxWidth?: number };
+			frame?: {
+				maxWidth?: number;
+			};
 		}[];
 		assert.ok(
-			modifiers.some((modifier) =>
-				platform === "android"
-					? modifier.fillMaxWidth
-					: modifier.frame?.maxWidth === Infinity,
-			),
+			modifiers.some((modifier) => modifier.frame?.maxWidth === Infinity),
 		);
 	}
 });
-
 test("glass actions opt into iOS 26 styles with explicit bordered fallback on older iOS", () => {
 	for (const version of ["18.5", "26.0", "27.0"]) {
 		const button = controls(
@@ -434,7 +419,9 @@ test("glass actions opt into iOS 26 styles with explicit bordered fallback on ol
 			onPress: () => {},
 		});
 		const native = button.props.children as Element;
-		const modifiers = native.props.modifiers as { buttonStyle?: string }[];
+		const modifiers = native.props.modifiers as {
+			buttonStyle?: string;
+		}[];
 		assert.equal(
 			modifiers.at(-1)?.buttonStyle,
 			version === "18.5" ? "borderedProminent" : "glassProminent",
@@ -446,9 +433,8 @@ test("glass actions opt into iOS 26 styles with explicit bordered fallback on ol
 		);
 	}
 });
-
-test("Toggle passes Android accessibility semantics only to the native switch", () => {
-	for (const platform of ["android", "ios", "web"]) {
+test("Toggle passes labelled state to the native switch", () => {
+	for (const platform of ["ios"]) {
 		const onChange = () => {};
 		const toggle = controls(platform).Toggle({
 			label: "Wore contacts today",
@@ -457,49 +443,21 @@ test("Toggle passes Android accessibility semantics only to the native switch", 
 			onChange,
 		});
 		const nativeSwitch = toggle.props.children as Element;
-		if (platform === "web") {
-			assert.equal(nativeSwitch.type, "label");
-			const input = elements(nativeSwitch).find(
-				(element) => element.type === "input",
-			);
-			assert.ok(input);
-			assert.equal(input.props.type, "checkbox");
-			assert.equal(input.props.role, "switch");
-			assert.equal(input.props.checked, true);
-			assert.equal(input.props.disabled, true);
-			continue;
-		}
 		assert.equal(nativeSwitch.type, "NativeSwitch");
 		assert.equal(nativeSwitch.props.value, true);
 		assert.equal(nativeSwitch.props.disabled, true);
 		assert.equal(nativeSwitch.props.onValueChange, onChange);
-		if (platform === "android") {
-			const modifiers = nativeSwitch.props.modifiers as {
-				contentDescription: string;
-			}[];
-			assert.equal(modifiers.length, 1);
-			assert.equal(modifiers[0].contentDescription, "Wore contacts today");
-		} else {
+		{
 			assert.equal(nativeSwitch.props.modifiers, undefined);
 		}
 	}
 });
-
-test("web fields retain RN accessible labels absent from Expo's universal input API", () => {
-	const field = controls("web").Field({
-		label: "Email",
-		value: "",
-		onChange: () => {},
-	});
-	const input = elements(field).find((node) => node.type === "TextInput");
-	assert.ok(input);
-	assert.ok(elements(field).some((node) => node.type === "RNHostView"));
-	assert.equal(input.props.accessibilityLabel, "Email");
-});
-
 test("native lens editor disables every editable control while overview account recovery stays available", () => {
 	const source = readFileSync(
-		new URL("../../src/components/settings/form.tsx", import.meta.url),
+		new URL(
+			"../../src/components/settings/lens-setup-fields.tsx",
+			import.meta.url,
+		),
 		"utf8",
 	);
 	function elements(node: unknown): Element[] {
@@ -508,9 +466,42 @@ test("native lens editor disables every editable control while overview account 
 		const element = node as Element;
 		return [element, ...elements(element.props.children)];
 	}
-	for (const platform of ["ios", "android"]) {
+	for (const platform of ["ios"]) {
 		const mocks: Record<string, unknown> = {
-			react: { useEffect: () => {}, useRef: () => ({ current: null }) },
+			react: {
+				useEffect: () => {},
+				useCallback: (fn: unknown) => fn,
+				useRef: (current: unknown) => ({ current }),
+			},
+			"../presentation/theme": {
+				usePresentationTheme: () => ({ text: "black", secondary: "gray" }),
+			},
+			"../native-input": { __esModule: true, default: "NativeInput" },
+			"./editor-date": { __esModule: true, default: "EditorDate" },
+			"../native-page": {
+				PageToggle: "PageToggle",
+				NativePage: "NativePage",
+				NativeSection: "NativeSection",
+				NativeRow: "NativeRow",
+				NativeStack: "NativeStack",
+				NativeText: "NativeText",
+				NativeAction: "NativeAction",
+			},
+			"./editor-link": { __esModule: true, default: "EditorLink" },
+			"./overview-summary": { supportingLines: () => [] },
+			"@expo/ui/swift-ui/modifiers": Object.fromEntries(
+				[
+					"accessibilityAddTraits",
+					"buttonStyle",
+					"fixedSize",
+					"font",
+					"foregroundStyle",
+					"frame",
+					"glassEffect",
+					"tint",
+				].map((name) => [name, (value: unknown) => ({ name, value })]),
+			),
+
 			"./calendar": { localDateString: () => "2026-04-01" },
 			"./days": { __esModule: true, default: "Days" },
 			"./native-fields": { __esModule: true, default: "NativeFields" },
@@ -552,7 +543,9 @@ test("native lens editor disables every editable control while overview account 
 				]),
 			),
 		};
-		const exports = {} as { default: (props: unknown) => Element };
+		const exports = {} as {
+			LensSetupFields: (props: unknown) => Element;
+		};
 		runInNewContext(
 			ts.transpileModule(source, {
 				compilerOptions: {
@@ -568,12 +561,14 @@ test("native lens editor disables every editable control while overview account 
 				},
 			},
 		);
-		const overview = {} as { default: (props: unknown) => Element };
+		const overview = {} as {
+			default: (props: unknown) => Element;
+		};
 		runInNewContext(
 			ts.transpileModule(
 				readFileSync(
 					new URL(
-						"../../src/components/settings/overview.tsx",
+						"../../src/components/settings/overview-content.tsx",
 						import.meta.url,
 					),
 					"utf8",
@@ -594,7 +589,9 @@ test("native lens editor disables every editable control while overview account 
 			},
 		);
 		for (const disabled of [false, true]) {
-			const page = exports.default({
+			const page = exports.LensSetupFields({
+				change() {},
+				current: () => true,
 				model: {
 					draft: {
 						differentIntervals: true,
@@ -608,17 +605,16 @@ test("native lens editor disables every editable control while overview account 
 					accountDisabled: false,
 					fieldErrors: {},
 					savedEvent: 0,
+					validationEvent: 0,
+					canLeave: () => true,
 					error: "",
 				},
 			});
-			assert.equal(page.type, "ScreenFrame");
-			assert.equal(page.props.insetMode, "stack");
-			assert.equal(page.props.scrollOwner, "content");
 			const controls = elements(page).filter(
 				(node) =>
-					node.type === "DateField" ||
-					node.type === "Days" ||
-					node.type === "NativeSwitch",
+					node.type === "EditorDate" ||
+					node.type === "NativeInput" ||
+					node.type === "PageToggle",
 			);
 			assert.equal(
 				controls.length,
@@ -627,24 +623,36 @@ test("native lens editor disables every editable control while overview account 
 			);
 			for (const control of controls)
 				assert.equal(control.props.disabled, disabled);
-			const save = elements(page).find(
-				(node) => node.props.label === "Save changes",
+			const editor = readFileSync(
+				new URL(
+					"../../src/components/settings/editor-form.tsx",
+					import.meta.url,
+				),
+				"utf8",
 			);
-			assert.equal(save?.props.disabled, disabled);
-			assert.ok(save, "explicit schedule save remains available");
+			assert.match(editor, /disabled=\{model.disabled\}/);
+			assert.match(
+				editor,
+				/if \(current\(\) && !model.disabled && model.canLeave\(\)\)\s+model.save\(\)/,
+			);
 			assert.ok(
 				!elements(page).some((node) => node.props.label === "Sign out"),
 				"the focused editor does not own account actions",
 			);
 			for (const accountDisabled of [false, true]) {
 				const accountPage = overview.default({
-					model: { disabled, accountDisabled },
+					model: {
+						disabled,
+						accountDisabled,
+						draft: {},
+						email: "test@example.com",
+					},
 					summary: "14-day replacement",
 					onEdit() {},
 				});
 				const signOut = elements(accountPage).find(
 					(node) =>
-						node.type === "NativeButton" && node.props.label === "Sign out",
+						node.type === "NativeAction" && node.props.label === "Sign out",
 				);
 				assert.ok(signOut, "overview owns account recovery");
 				assert.equal(signOut.props.disabled, accountDisabled);

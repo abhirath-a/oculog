@@ -4,10 +4,11 @@ import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import * as dateOnly from "../../src/components/presentation/date-only";
-import { webTypography } from "../../src/components/presentation/web-typography";
-import * as calendar from "../../src/components/settings/calendar";
-
-type Element = { type: unknown; props: Record<string, unknown>; key?: unknown };
+type Element = {
+	type: unknown;
+	props: Record<string, unknown>;
+	key?: unknown;
+};
 const jsx = (
 	type: unknown,
 	props: Record<string, unknown>,
@@ -93,7 +94,11 @@ function harness(
 				];
 			},
 			useImperativeHandle: (
-				ref: { current: unknown } | undefined,
+				ref:
+					| {
+							current: unknown;
+					  }
+					| undefined,
 				factory: () => unknown,
 			) => {
 				if (ref) ref.current = factory();
@@ -152,15 +157,14 @@ function harness(
 		"react-native-safe-area-context": {
 			useSafeAreaInsets: () => ({ top: 44, bottom: 34 }),
 		},
-		"../settings/calendar": calendar,
 		"./date-only": dateOnly,
-		"./web-typography": { webTypography },
 		"./date-field-picker": { DateFieldPicker: "DateFieldPicker" },
 		"./theme": {
 			usePresentationTheme: () => theme,
 			usePresentationEpoch: () => 0,
 			usePresentationPaletteHold: () => {},
 		},
+		"../brand/wordmark": { BrandWordmark: "BrandWordmark" },
 		"./text": { PresentationText: "PresentationText" },
 		"./semantic-text": { SemanticText: "SemanticText" },
 		...overrides,
@@ -199,7 +203,6 @@ function harness(
 		},
 	};
 }
-
 test("native date field always stacks label and trigger without intrinsic calendar width", () => {
 	for (const fontScale of [1, 2]) {
 		const h = harness("date-field.tsx", "ios", {
@@ -221,8 +224,7 @@ test("native date field always stacks label and trigger without intrinsic calend
 		assert.equal(header.type, "SemanticText");
 	}
 });
-
-for (const platform of ["android", "ios"]) {
+for (const platform of ["ios"]) {
 	test(`${platform} actual DateField preserves blank, maximum, calendar conversion, confirmation and clearing`, () => {
 		const h = harness("date-field.tsx", platform);
 		const writes: string[] = [];
@@ -298,11 +300,10 @@ for (const platform of ["android", "ios"]) {
 		);
 	});
 }
-
 test("iOS wheel A → B → A updates rendered selection without committing until Done", () => {
 	const h = harness("date-field.tsx", "ios");
 	const modifier = (value: unknown) => value;
-	const adapter = harness("date-field-picker.ios.tsx", "ios", {
+	const adapter = harness("date-field-picker.tsx", "ios", {
 		"@expo/ui/swift-ui": {
 			BottomSheet: "BottomSheet",
 			DatePicker: "DatePicker",
@@ -363,7 +364,6 @@ test("iOS wheel A → B → A updates rendered selection without committing unti
 	invoke(find(tree, "Button", "Done"), "onPress");
 	assert.deepEqual(writes, [a]);
 	invoke(find(tree, "BottomSheet"), "onDismiss");
-
 	tree = wheel(open(), b);
 	invoke(find(tree, "Button", "Cancel"), "onPress");
 	invoke(find(tree, "Button", "Done"), "onPress");
@@ -388,7 +388,6 @@ test("iOS wheel A → B → A updates rendered selection without committing unti
 	invoke(find(tree, "Button", "Done"), "onPress");
 	assert.deepEqual(writes, [a, a]);
 });
-
 test("native date callbacks cannot commit while pending and stale sessions cannot close a new picker", () => {
 	const h = harness("date-field.tsx", "ios");
 	const writes: string[] = [];
@@ -419,11 +418,10 @@ test("native date callbacks cannot commit while pending and stale sessions canno
 	invoke(picker, "onDone");
 	assert.deepEqual(writes, [props.value]);
 });
-
-for (const platform of ["ios", "android"]) {
+for (const platform of ["ios"]) {
 	test(`${platform} actual native date adapter uses verified modal API and date-only bridge`, () => {
 		const modifier = (value: unknown) => value;
-		const h = harness(`date-field-picker.${platform}.tsx`, platform, {
+		const h = harness(`date-field-picker.tsx`, platform, {
 			"@expo/ui/swift-ui": {
 				BottomSheet: "BottomSheet",
 				DatePicker: "DatePicker",
@@ -455,7 +453,7 @@ for (const platform of ["ios", "android"]) {
 			onDismiss: () => dismisses++,
 		};
 		let tree = h.call("DateFieldPicker", props) as Element;
-		if (platform === "ios") {
+		{
 			const picker = find(tree, "DatePicker");
 			assert.equal(
 				dateOnly.dateOnlyFromDate(picker.props.selection as Date),
@@ -468,67 +466,13 @@ for (const platform of ["ios", "android"]) {
 			assert.deepEqual(done, [undefined]);
 			invoke(find(tree, "BottomSheet"), "onIsPresentedChange", false);
 			invoke(find(tree, "BottomSheet"), "onDismiss");
-		} else {
-			const picker = find(tree, "DatePickerDialog");
-			assert.equal(picker.props.initialDate, "2026-03-01T00:00:00.000Z");
-			assert.equal(
-				(picker.props.selectableDates as { end: Date }).end.toISOString(),
-				"2026-03-08T00:00:00.000Z",
-			);
-			invoke(picker, "onDateSelected", dateOnly.dateOnlyToUTC("2026-03-02"));
-			assert.deepEqual(done, ["2026-03-02"]);
-			invoke(picker, "onDismissRequest");
-			props.visible = false;
-			tree = h.call("DateFieldPicker", props) as Element;
-			assert.equal(
-				elements(tree).some((node) => node.type === "DatePickerDialog"),
-				false,
-			);
 		}
 		assert.equal(cancels, 1);
 		assert.equal(dismisses, 1);
 	});
 }
-
-test("actual web DateField forwards focus, error association, controlled empty writes and maximum", () => {
-	const h = harness("date-field.web.tsx", "web");
-	const inputRef = { current: null as { focus(): void } | null };
-	const writes: string[] = [];
-	const props = {
-		label: "Left opened on",
-		value: "2026-01-01",
-		maximum: "2026-04-01",
-		error: "Choose a valid date",
-		inputRef,
-		disabled: false,
-		onChange: (value: string) => writes.push(value),
-	};
-	let tree = h.call("DateField", props) as Element;
-	const input = find(tree, "input");
-	assert.equal(input.props["aria-label"], props.label);
-	assert.equal(input.props["aria-invalid"], true);
-	assert.equal(input.props.max, props.maximum);
-	assert.equal(find(tree, "span").props.id, input.props["aria-describedby"]);
-	let focuses = 0;
-	(input.props.ref as { current: unknown }).current = {
-		focus: () => focuses++,
-	};
-	inputRef.current?.focus();
-	assert.equal(focuses, 1);
-	invoke(input, "onChange", { currentTarget: { value: "" } });
-	assert.deepEqual(writes, [""]);
-	props.disabled = true;
-	tree = h.call("DateField", props) as Element;
-	invoke(find(tree, "input"), "onChange", {
-		currentTarget: { value: "2026-02-01" },
-	});
-	inputRef.current?.focus();
-	assert.equal(focuses, 1);
-	assert.deepEqual(writes, [""]);
-});
-
-test("actual sheet owns the RN bridge, sizes to content and reports Android busy dismissal without closing requests", () => {
-	for (const platform of ["android", "ios", "web"]) {
+test("actual sheet owns the RN bridge, sizes to content and reports busy dismissal without closing requests", () => {
+	for (const platform of ["ios"]) {
 		const h = harness("native-sheet.tsx", platform);
 		let dismisses = 0;
 		const tree = h.call("NativeSheet", {
@@ -549,12 +493,11 @@ test("actual sheet owns the RN bridge, sizes to content and reports Android busy
 		assert.equal(find(tree, "RNHostView").props.matchContents, true);
 		assert.equal(find(tree, "Button", "Close").props.disabled, true);
 		invoke(find(tree, "Button", "Close"), "onPress");
-		assert.equal(tree.props.shouldDismissOnBackPress, false);
-		assert.equal(tree.props.shouldDismissOnClickOutside, false);
-		if (platform === "ios")
-			assert.deepEqual(JSON.parse(JSON.stringify(tree.props.modifiers)), [
-				{ kind: "interactiveDismissDisabled", value: true },
-			]);
+		assert.equal(tree.props.shouldDismissOnBackPress, undefined);
+		assert.equal(tree.props.shouldDismissOnClickOutside, undefined);
+		assert.deepEqual(JSON.parse(JSON.stringify(tree.props.modifiers)), [
+			{ kind: "interactiveDismissDisabled", value: true },
+		]);
 		invoke(tree, "onDismiss");
 		assert.equal(
 			dismisses,
@@ -567,12 +510,11 @@ test("actual sheet owns the RN bridge, sizes to content and reports Android busy
 		);
 	}
 });
-
 test("sheet keys only its native presentation and rejects dismissal callbacks from an obsolete palette boundary", () => {
 	let epoch = 0;
 	let dismisses = 0;
 	const holds: boolean[] = [];
-	const h = harness("native-sheet.tsx", "android", {
+	const h = harness("native-sheet.tsx", "ios", {
 		"./theme": {
 			usePresentationTheme: () => theme,
 			usePresentationEpoch: () => epoch,
@@ -603,9 +545,8 @@ test("sheet keys only its native presentation and rejects dismissal callbacks fr
 	invoke(current, "onDismiss");
 	assert.equal(dismisses, 1);
 });
-
 test("actual ScreenFrame has one scroll owner, no empty headings, and no doubled tab bottom inset", () => {
-	for (const platform of ["android", "ios", "web"]) {
+	for (const platform of ["ios"]) {
 		const h = harness("screen-frame.tsx", platform);
 		const props = {
 			title: "Today",
@@ -620,12 +561,19 @@ test("actual ScreenFrame has one scroll owner, no empty headings, and no doubled
 			1,
 		);
 		assert.equal(
-			(scroll.props.contentContainerStyle as { paddingTop: number }).paddingTop,
-			platform === "android" ? 56 : 12,
+			(
+				scroll.props.contentContainerStyle as {
+					paddingTop: number;
+				}
+			).paddingTop,
+			12,
 		);
 		assert.equal(
-			(scroll.props.contentContainerStyle as { paddingBottom: number })
-				.paddingBottom,
+			(
+				scroll.props.contentContainerStyle as {
+					paddingBottom: number;
+				}
+			).paddingBottom,
 			20,
 		);
 		props.scrollOwner = "content";
@@ -652,7 +600,6 @@ test("actual ScreenFrame has one scroll owner, no empty headings, and no doubled
 		);
 	}
 });
-
 test("actual semantic typography uses Dynamic Type, semantic colors, heading traits and RN ramps without scaling caps", () => {
 	const h = harness("text.tsx", "ios");
 	const props = {
@@ -680,78 +627,7 @@ test("actual semantic typography uses Dynamic Type, semantic colors, heading tra
 	assert.equal(rn.props.numberOfLines, undefined);
 	assert.equal(rn.props.maxFontSizeMultiplier, undefined);
 });
-
-test("actual Android semantic adapter uses Material typography and only bridges missing heading semantics", () => {
-	const h = harness("semantic-text.android.tsx", "android");
-	const native = h.call("SemanticText", {
-		children: "Body",
-		role: "body",
-	}) as Element;
-	assert.equal(native.type, "ComposeText");
-	assert.equal(
-		(native.props.style as { typography: string }).typography,
-		"bodyLarge",
-	);
-	const header = h.call("SemanticText", {
-		children: "Title",
-		role: "title",
-		heading: true,
-	}) as Element;
-	assert.equal(typeof header.type, "function");
-	const renderHeading = header.type as (
-		props: Record<string, unknown>,
-	) => Element;
-	const constrained = renderHeading(header.props);
-	assert.equal(constrained.type, "ComposeColumn");
-	const modifiers = constrained.props.modifiers as {
-		kind: string;
-		value: (size: { width: number }) => void;
-	}[];
-	assert.ok(modifiers.some((mod) => mod.kind === "fillMaxWidth"));
-	modifiers.find((mod) => mod.kind === "onSizeChanged")!.value({ width: 296 });
-	h.call("SemanticText", header.props);
-	const measured = renderHeading(header.props);
-	assert.equal(find(measured, "RNHostView").props.matchContents, true);
-	assert.equal(
-		(find(measured, "View").props.style as { width: number }).width,
-		296,
-	);
-	assert.equal(find(measured, "PresentationText").props.heading, true);
-});
-
-test("actual ChoiceControl exposes labelled, selected HTML choices with disabled and intrinsic sizing", () => {
-	const h = harness("choice-control.tsx", "web");
-	let written = "";
-	const tree = h.call("ChoiceControl", {
-		label: "Eye",
-		value: "left",
-		disabled: true,
-		options: [
-			{ value: "left", label: "Left" },
-			{ value: "right", label: "Right" },
-		],
-		onChange: (value: string) => {
-			written = value;
-		},
-	}) as Element;
-	const select = find(tree, "select");
-	assert.equal(select.props["aria-label"], "Eye");
-	assert.equal(select.props.value, "left");
-	assert.equal(select.props.disabled, true);
-	assert.equal((select.props.style as { height?: number }).height, undefined);
-	assert.equal(
-		elements(tree).filter((node) => node.type === "option").length,
-		2,
-	);
-	invoke(select, "onChange", { currentTarget: { value: "right" } });
-	assert.equal(
-		written,
-		"",
-		"disabled choice cannot write even through a stale event",
-	);
-});
-
-test("actual notifySuccess is web no-op and swallows native haptic rejection", async () => {
+test("actual notifySuccess swallows iOS haptic rejection", async () => {
 	let calls = 0;
 	const overrides = {
 		"expo-haptics": {
@@ -763,8 +639,6 @@ test("actual notifySuccess is web no-op and swallows native haptic rejection", a
 			},
 		},
 	};
-	await harness("haptics.ts", "web", overrides).call("notifySuccess");
-	assert.equal(calls, 0);
-	await harness("haptics.ts", "android", overrides).call("notifySuccess");
+	await harness("haptics.ts", "ios", overrides).call("notifySuccess");
 	assert.equal(calls, 1);
 });

@@ -1,5 +1,4 @@
 import { Button, Column } from "@expo/ui";
-import { semantics } from "@expo/ui/jetpack-compose/modifiers";
 import { accessibilityLabel, frame } from "@expo/ui/swift-ui/modifiers";
 import {
 	type Ref,
@@ -8,7 +7,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Platform } from "react-native";
 import { DateFieldPicker } from "./date-field-picker";
 import { createDateOnlySession } from "./date-only";
 import { SemanticText } from "./semantic-text";
@@ -76,11 +74,7 @@ export function DateField({
 			label={value || "Choose date"}
 			disabled={disabled}
 			variant="text"
-			modifiers={
-				Platform.OS === "ios"
-					? [accessibilityLabel(description), frame({ minHeight: 44 })]
-					: [semantics({ contentDescription: description })]
-			}
+			modifiers={[accessibilityLabel(description), frame({ minHeight: 44 })]}
 			onPress={open}
 		/>
 	);

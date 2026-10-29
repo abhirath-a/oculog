@@ -1,5 +1,4 @@
 import { BottomSheet, Button, Host, RNHostView } from "@expo/ui";
-import { semantics } from "@expo/ui/jetpack-compose/modifiers";
 import {
 	accessibilityLabel,
 	frame,
@@ -9,7 +8,6 @@ import { type ReactNode, useRef } from "react";
 import {
 	Keyboard,
 	KeyboardAvoidingView,
-	Platform,
 	ScrollView,
 	useWindowDimensions,
 	View,
@@ -31,8 +29,7 @@ export type NativeSheetProps = {
 	children: ReactNode;
 };
 
-/** RN-tree entry point. Root BottomSheet owns its presentation Host; RNHostView explicitly bridges the RN children.
- * Android cannot block drag dismissal: always report onDismiss, including while busy. The caller must retain its draft.
+/** RN-tree entry point. BottomSheet owns its Host; RNHostView bridges RN children.
  * onRequestClose is only the explicit close action. onDismiss reports a native dismissal, not a request to reset data.
  */
 export function NativeSheet({
@@ -49,7 +46,8 @@ export function NativeSheet({
 	const currentEpoch = useRef(paletteEpoch);
 	currentEpoch.current = paletteEpoch;
 	const insets = useSafeAreaInsets();
-	const { height } = useWindowDimensions();
+	const { width, height } = useWindowDimensions();
+
 	return (
 		<BottomSheet
 			key={paletteEpoch}
@@ -62,11 +60,7 @@ export function NativeSheet({
 			}}
 			contentPadding={0}
 			containerColor={theme.surface}
-			shouldDismissOnBackPress={!busy}
-			shouldDismissOnClickOutside={!busy}
-			modifiers={
-				Platform.OS === "ios" ? [interactiveDismissDisabled(busy)] : undefined
-			}
+			modifiers={[interactiveDismissDisabled(busy)]}
 		>
 			<RNHostView matchContents>
 				<KeyboardAvoidingView
@@ -78,24 +72,24 @@ export function NativeSheet({
 						}
 					}}
 					style={{
+						width,
 						maxHeight: Math.max(0, height - insets.top - 32),
 						backgroundColor: theme.surface,
 					}}
-					behavior={Platform.OS === "ios" ? "padding" : undefined}
+					behavior="padding"
 				>
 					<View
 						style={{
-							paddingLeft: 16 + insets.left,
-							paddingRight: 16 + insets.right,
+							paddingHorizontal: 16,
 							paddingTop: 8,
 							paddingBottom: 8,
 							flexDirection: "row",
 							alignItems: "center",
 							gap: 8,
+							width: "100%",
 						}}
 					>
-						<View style={{ flex: 1 }}>
-							{/* biome-ignore lint/a11y/useValidAriaRole: App typography role, not an ARIA role. */}
+						<View style={{ flex: 1, minWidth: 0 }}>
 							<PresentationText role="headline" heading>
 								{title}
 							</PresentationText>
@@ -111,36 +105,19 @@ export function NativeSheet({
 										onRequestClose();
 									}
 								}}
-								modifiers={
-									Platform.OS === "ios"
-										? [
-												frame({ minHeight: 44 }),
-												accessibilityLabel(`Close ${title.toLowerCase()}`),
-											]
-										: Platform.OS === "android"
-											? [
-													semantics({
-														contentDescription: `Close ${title.toLowerCase()}`,
-													}),
-												]
-											: undefined
-								}
-							>
-								{Platform.OS === "web" ? (
-									<PresentationText>Close</PresentationText>
-								) : undefined}
-							</Button>
+								modifiers={[
+									frame({ minHeight: 44 }),
+									accessibilityLabel(`Close ${title.toLowerCase()}`),
+								]}
+							/>
 						</Host>
 					</View>
 					<ScrollView
-						style={{ flexGrow: 0, flexShrink: 1 }}
+						style={{ flexGrow: 0, flexShrink: 1, width: "100%" }}
 						keyboardShouldPersistTaps="handled"
-						keyboardDismissMode={
-							Platform.OS === "ios" ? "interactive" : "on-drag"
-						}
+						keyboardDismissMode="interactive"
 						contentContainerStyle={{
-							paddingLeft: 16 + insets.left,
-							paddingRight: 16 + insets.right,
+							paddingHorizontal: 16,
 							paddingBottom: 16 + insets.bottom,
 							gap: 12,
 						}}

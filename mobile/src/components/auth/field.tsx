@@ -1,11 +1,4 @@
-import {
-	Column,
-	RNHostView,
-	TextInput,
-	type TextInputRef,
-	useNativeState,
-} from "@expo/ui";
-import type { TextFieldRef } from "@expo/ui/jetpack-compose";
+import { Column, TextInput, type TextInputRef, useNativeState } from "@expo/ui";
 import {
 	accessibilityLabel,
 	font,
@@ -13,10 +6,7 @@ import {
 	textFieldStyle,
 } from "@expo/ui/swift-ui/modifiers";
 import { type Ref, useEffect, useImperativeHandle, useRef } from "react";
-import { Platform } from "react-native";
 import { SemanticText, usePresentationTheme } from "../presentation";
-import { Field } from "../ui";
-import { AndroidPasswordInput } from "./password-input";
 
 export type AuthInputHandle = { focus(): void; blur(): void };
 export type AuthFieldProps = {
@@ -35,7 +25,7 @@ export type AuthFieldProps = {
 	onSubmitEditing?: () => void;
 };
 
-/** Native-tree field. Existing Settings callers can continue using this API. */
+/** Native-tree field with a SwiftUI-owned outline and secure entry. */
 export function AuthField({
 	label,
 	value,
@@ -51,10 +41,9 @@ export function AuthField({
 	returnKeyType = "done",
 	onSubmitEditing,
 }: AuthFieldProps) {
+	const theme = usePresentationTheme();
 	const text = useNativeState(value);
 	const ref = useRef<TextInputRef>(null);
-	const androidRef = useRef<TextFieldRef>(null);
-	const theme = usePresentationTheme();
 	useEffect(() => {
 		if (text.value !== value) text.value = value;
 	}, [text, value]);
@@ -62,67 +51,15 @@ export function AuthField({
 		inputRef,
 		() => ({
 			focus: () => {
-				if (Platform.OS === "android")
-					void androidRef.current?.focus().catch(() => {});
-				else ref.current?.focus();
+				if (!disabled) ref.current?.focus();
 			},
-			blur: () => {
-				if (Platform.OS === "android")
-					void androidRef.current?.blur().catch(() => {});
-				else ref.current?.blur();
-			},
+			blur: () => ref.current?.blur(),
 		}),
-		[],
+		[disabled],
 	);
 	useEffect(() => {
-		if (error && !disabled) {
-			if (Platform.OS === "android")
-				void androidRef.current?.focus().catch(() => {});
-			else ref.current?.focus();
-		}
+		if (error && !disabled) ref.current?.focus();
 	}, [error, disabled]);
-	if (Platform.OS === "web")
-		return (
-			<RNHostView matchContents>
-				<Field
-					label={label}
-					value={value}
-					onChange={onChange}
-					secure={secure}
-					disabled={disabled}
-					autoComplete={autoComplete}
-					autoCapitalize={autoCapitalize}
-					keyboardType={
-						keyboardType === "number-pad" ? "decimal-pad" : keyboardType
-					}
-				/>
-			</RNHostView>
-		);
-	if (Platform.OS === "android")
-		return (
-			<Column spacing={6}>
-				<AndroidPasswordInput
-					inputRef={androidRef}
-					label={label}
-					value={value}
-					onChange={onChange}
-					secure={secure}
-					disabled={disabled}
-					autoComplete={autoComplete}
-					autoCapitalize={autoCapitalize}
-					keyboardType={keyboardType}
-					error={error}
-					maxLength={maxLength}
-					returnKeyType={returnKeyType}
-					onSubmitEditing={onSubmitEditing}
-				/>
-				{!!error && (
-					<SemanticText role="caption" tone="danger">
-						{error}
-					</SemanticText>
-				)}
-			</Column>
-		);
 	return (
 		<Column spacing={6}>
 			{/* biome-ignore lint/a11y/useValidAriaRole: native typography role. */}
@@ -142,8 +79,6 @@ export function AuthField({
 				maxLength={maxLength}
 				returnKeyType={returnKeyType}
 				onSubmitEditing={onSubmitEditing}
-				// SwiftUI owns the complete rounded outline, including SecureField.
-				// Keep the minimum target outside that style; no additional padding/border.
 				modifiers={[
 					accessibilityLabel(label),
 					font({ textStyle: "body" }),

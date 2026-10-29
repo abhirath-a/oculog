@@ -6,7 +6,8 @@ import ts from "typescript";
 import type { SimpleState } from "../../shared/simple-domain";
 import * as helpers from "../../src/components/home/add-intent";
 import * as model from "../../src/components/home/model";
-import * as webTypography from "../../src/components/presentation/web-typography";
+import * as todayModel from "../../src/components/home/today-model";
+import * as addModel from "../../src/components/home/today-add-model";
 import * as controller from "../../src/lib/simple-controller";
 
 type Element = { type: unknown; props: Record<string, unknown> };
@@ -108,12 +109,6 @@ function harness() {
 	const mocks: Record<string, unknown> = {
 		"./presentation": presentation,
 		"../presentation": presentation,
-		"../presentation/web-typography": webTypography,
-		"@expo/ui/jetpack-compose/modifiers": {
-			semantics: (value: unknown) => value,
-			fillMaxWidth: () => ({ name: "fillMaxWidth" }),
-			weight: (value: number) => ({ name: "weight", value }),
-		},
 		"react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "Fragment" },
 		react: {
 			useEffect: () => {},
@@ -161,12 +156,11 @@ function harness() {
 		"expo-router": {
 			useRouter: () => ({ push: (path: string) => routes.push(path) }),
 		},
-		"../lib/simple-controller": controller,
-		"../lib/api": { sessionStore: { token: "token", account: { id: "a" } } },
-		"../lib/store": { useStore: () => store },
-		"./home/add-intent": helpers,
-		"./home/daily-choice": { DailyChoice: "DailyChoice" },
-		"./ui": {
+		"../../lib/simple-controller": controller,
+		"../../lib/api": { sessionStore: { token: "token", account: { id: "a" } } },
+		"../../lib/store": { useStore: () => store },
+		"./add-intent": helpers,
+		"../ui": {
 			...Object.fromEntries(
 				["Button", "Card", "Choices", "Feedback", "Field", "Page", "Txt"].map(
 					(name) => [name, name],
@@ -188,29 +182,47 @@ function harness() {
 			}),
 		},
 	};
-	const content = load("../../src/components/home/HomeContent.tsx", {
+	mocks["./today-model"] = todayModel;
+	mocks["./today-design"] = {
+		TodayAction: "Button",
+		TodayText: "SemanticText",
+		TodaySection: "Section",
+		TodayRow: "Row",
+		TodayDisclosure: "Disclosure",
+	};
+	mocks["./TodayFeedback"] = { __esModule: true, default: "TodayFeedback" };
+	mocks["./today-feedback"] = { __esModule: true, default: "TodayFeedback" };
+	mocks["./today-wear"] = load(
+		"../../src/components/home/today-wear.ts",
+		mocks,
+	);
+	const content = load("../../src/components/home/today-content.tsx", {
 		...mocks,
-		"../ui": mocks["./ui"],
-		"./daily-choice": mocks["./home/daily-choice"],
+		"../ui": mocks["../ui"],
 		"./model": model,
 	});
-	mocks["./home/HomeContent"] = { __esModule: true, default: content.default };
-	mocks["./home/AddContactsForm"] = {
+	mocks["./HomeContent"] = { __esModule: true, default: content.default };
+	mocks["./AddContactsForm"] = {
 		__esModule: true,
 		default: function AddContactsForm() {},
 	};
-	const sheet = load("../../src/components/home/AddContactsSheet.tsx", {
-		...mocks,
-		"../ui": mocks["./ui"],
-		"./AddContactsForm": mocks["./home/AddContactsForm"],
-	});
-	mocks["./home/AddContactsSheet"] = {
+	// Owner tests inspect controlled props at the sheet boundary. Real iOS sheet
+	// rendering and dismissal modifiers are exercised by today-native-presentation.
+	const sheet = {
+		default: function NativeSheet(props: Record<string, unknown>) {
+			return jsx("NativeSheet", {
+				...props,
+				children: jsx("AddContactsForm", props),
+			});
+		},
+	};
+	mocks["./AddContactsSheet"] = {
 		__esModule: true,
 		default: sheet.default,
 	};
 	const exports = {
 		...content,
-		...load("../../src/components/simple-home.tsx", mocks),
+		...load("../../src/components/home/screen.tsx", mocks),
 	};
 	return {
 		exports,
@@ -249,52 +261,6 @@ function harness() {
 	};
 }
 
-test("Android eye headings are constrained Compose text without the RN measurement bridge", () => {
-	const h = harness();
-	const android = load("../../src/components/home/HomeContent.android.tsx", {
-		...h.mocks,
-		"@expo/ui/jetpack-compose": {
-			Column: "Column",
-			Row: "Row",
-			Host: "Host",
-			Text: "ComposeText",
-		},
-		"../settings/material-section.android": {
-			MaterialSection: "MaterialSection",
-		},
-		"../settings/native-fields": { __esModule: true, default: "NativeFields" },
-		"./daily-choice": { DailyChoice: "DailyChoice" },
-		"./model": model,
-	});
-	for (const fontScale of [1, 1.5]) {
-		for (const settings of h.store.state.eyes) {
-			const row = android.EyeCard({
-				settings,
-				disabled: false,
-				stacked: fontScale > 1,
-			});
-			const heading = find(row, "ComposeText");
-			assert.equal(
-				heading.props.children,
-				`${settings.eye === "left" ? "Left" : "Right"} lens`,
-			);
-			assert.deepEqual(JSON.parse(JSON.stringify(heading.props.style)), {
-				typography: "titleMedium",
-			});
-			assert.deepEqual(JSON.parse(JSON.stringify(heading.props.modifiers)), [
-				{ name: "fillMaxWidth" },
-			]);
-			assert.equal(heading.props.maxLines, undefined);
-			assert.equal(
-				elements(row).some(
-					(node) => node.type === "SemanticText" && node.props.heading,
-				),
-				false,
-			);
-		}
-	}
-});
-
 test("eye countdown uses server days and no spare omits replacement", () => {
 	const h = harness();
 	const settings = {
@@ -332,13 +298,8 @@ test("eye countdown uses server days and no spare omits replacement", () => {
 	);
 });
 
-test("native and web lens labels distinguish configured unopened lenses from replacements", () => {
+test("iOS lens labels distinguish configured unopened lenses from replacements", () => {
 	const h = harness();
-	const web = load("../../src/components/home/HomeContent.web.tsx", {
-		...h.mocks,
-		"./daily-choice": { DailyChoice: "DailyChoice" },
-		"./model": model,
-	});
 	for (const settings of h.store.state.eyes) {
 		for (const openedOn of [null, "2026-03-20"]) {
 			settings.openedOn = openedOn;
@@ -358,12 +319,6 @@ test("native and web lens labels distinguish configured unopened lenses from rep
 				find(h.exports.EyeCard(props), "Button", label).props.disabled,
 				false,
 			);
-			assert.ok(
-				elements(web.default(props)).some(
-					(node) =>
-						node.type === "PresentationText" && node.props.children === label,
-				),
-			);
 		}
 		settings.openedOn = null;
 		settings.replacementDays = null;
@@ -382,11 +337,6 @@ test("native and web lens labels distinguish configured unopened lenses from rep
 
 test("unconfigured Home shares one setup action and preserves the other eye action", () => {
 	const h = harness();
-	const web = load("../../src/components/home/HomeContent.web.tsx", {
-		...h.mocks,
-		"./daily-choice": { DailyChoice: "DailyChoice" },
-		"./model": model,
-	});
 	for (const unconfigured of [1, 2]) {
 		for (const eye of h.store.state.eyes.slice(0, unconfigured)) {
 			eye.replacementDays = null;
@@ -396,7 +346,7 @@ test("unconfigured Home shares one setup action and preserves the other eye acti
 		}
 		const native = h.render();
 		assert.equal(
-			elements(native).filter((node) => node.props.label === "Lens setup")
+			elements(native).filter((node) => node.props.label === "Set up lenses")
 				.length,
 			1,
 		);
@@ -407,19 +357,24 @@ test("unconfigured Home shares one setup action and preserves the other eye acti
 		}
 		for (const openedOn of [null, "2026-03-20"]) {
 			h.store.state.eyes[1].openedOn = openedOn;
-			const tree = web.default({
-				state: h.store.state,
-				disabled: false,
-				onSettings: () => {},
-			});
+			const tree = h.render();
 			const text = elements(tree).map((node) => node.props.children);
-			assert.equal(text.filter((value) => value === "Lens setup").length, 1);
 			assert.equal(
-				text.filter((value) => value === "Replacement interval not set").length,
+				elements(tree).filter((node) => node.props.label === "Set up lenses")
+					.length,
+				1,
+			);
+			assert.equal(
+				elements(tree).filter(
+					(node) =>
+						typeof node.type === "function" &&
+						node.type.name === "EyeCard" &&
+						(node.props.settings as { replacementDays: number | null })
+							.replacementDays === null,
+				).length,
 				unconfigured,
 			);
 			if (unconfigured === 1) {
-				assert.ok(text.includes(`${openedOn ? "Replace" : "Open"} right lens`));
 				assert.ok(
 					find(
 						h.exports.EyeCard({
@@ -478,78 +433,18 @@ test("replacement cancellation is nonmutating and confirmed replacement targets 
 test("daily check-in shows unknown explicitly and writes the authoritative server day", async () => {
 	const h = harness();
 	const section = h.exports.DailyLogSection({
+		eyes: h.store.state.eyes,
 		state: h.store.state,
 		disabled: false,
 		onLog: () => {},
 	});
-	assert.equal(find(section, "DailyChoice").props.worn, null);
+	assert.equal(find(section, "Button", "Yes").props.selected, false);
+	assert.equal(find(section, "Button", "No").props.selected, false);
 	invoke(find(h.render(), "DailyLogSection"), "onLog", false);
 	await h.flush();
 	assert.deepEqual(h.calls, [
 		{ route: "day", body: { localDate: "2026-04-01", worn: false } },
 	]);
-});
-
-test("web daily radios leave unknown unchecked and control Yes/No selection", () => {
-	const h = harness();
-	const choices = load("../../src/components/home/daily-choice.tsx", {
-		...h.mocks,
-		"react-native": {
-			Platform: { OS: "web" },
-			View: "View",
-			Pressable: "Pressable",
-			Text: "Text",
-		},
-	});
-	const values: boolean[] = [];
-	for (const worn of [null, true, false]) {
-		const node = choices.DailyChoice({
-			worn,
-			disabled: false,
-			onLog: (value: boolean) => values.push(value),
-		});
-		assert.equal(node.props.accessibilityLabel, "Did you wear lenses today?");
-		const radios = elements(node).filter(
-			(item) => item.props.accessibilityRole === "radio",
-		);
-		assert.equal(radios.length, 2);
-		assert.deepEqual(
-			radios.map(
-				(radio) =>
-					(radio.props.accessibilityState as { checked: boolean }).checked,
-			),
-			[worn === true, worn === false],
-		);
-		assert.deepEqual(
-			radios.map((radio) => radio.props.accessibilityLabel),
-			["Did you wear lenses today: Yes", "Did you wear lenses today: No"],
-		);
-		for (const radio of radios) {
-			assert.equal(radio.props.disabled, false);
-			invoke(radio, "onPress");
-		}
-	}
-	assert.deepEqual(values, [true, false, true, false, true, false]);
-	const disabled = choices.DailyChoice({
-		worn: null,
-		disabled: true,
-		onLog: (value: boolean) => values.push(value),
-	});
-	for (const radio of elements(disabled).filter(
-		(item) => item.props.accessibilityRole === "radio",
-	)) {
-		assert.equal(
-			(radio.props.accessibilityState as { disabled: boolean }).disabled,
-			true,
-		);
-		invoke(radio, "onPress");
-	}
-	assert.equal(values.length, 6);
-	assert.ok(
-		elements(disabled)
-			.filter((item) => item.type === "Pressable")
-			.every((button) => button.props.disabled === true),
-	);
 });
 
 test("Home delegates insets and scrolling and keeps rows intrinsic at every text scale", () => {
@@ -566,9 +461,10 @@ test("Home delegates insets and scrolling and keeps rows intrinsic at every text
 		assert.equal(home.props.insetMode, "tabs");
 		assert.equal(home.props.scrollOwner, "content");
 		assert.equal(
-			elements(home).filter((node) => node.type === "Host").length,
-			1,
+			elements(home).filter((node) => node.type === "ScrollView").length,
+			0,
 		);
+		// Native geometry is owned by the canonical today-root adapter, tested separately.
 		assert.equal(
 			elements(home).filter(
 				(node) =>
@@ -589,8 +485,11 @@ test("Home delegates insets and scrolling and keeps rows intrinsic at every text
 		onReplace: () => {},
 		onSettings: () => {},
 	});
-	assert.equal((eye.props.style as Record<string, unknown>).height, undefined);
-	assert.equal(find(eye, "Button").props.variant, "outlined");
+	assert.equal(
+		(eye.props.style as Record<string, unknown> | undefined)?.height,
+		undefined,
+	);
+	assert.equal(find(eye, "Button").props.disabled, false);
 });
 
 test("daily question and acknowledgement reflect the controlled server choice", () => {
@@ -598,6 +497,7 @@ test("daily question and acknowledgement reflect the controlled server choice", 
 	for (const worn of [null, true, false]) {
 		h.store.state.daily.worn = worn;
 		const section = h.exports.DailyLogSection({
+			eyes: h.store.state.eyes,
 			state: h.store.state,
 			disabled: false,
 			onLog: () => {},
@@ -605,13 +505,14 @@ test("daily question and acknowledgement reflect the controlled server choice", 
 		const text = elements(section)
 			.filter((item) => item.type === "SemanticText")
 			.map((item) => item.props.children);
-		assert.ok(text.includes("Did you wear lenses today?"));
+		assert.equal(section.props.title, "Did you wear contact lenses today?");
 		assert.ok(
 			text.includes(
 				worn === null ? "Not recorded" : `Recorded: ${worn ? "Yes" : "No"}`,
 			),
 		);
-		assert.equal(find(section, "DailyChoice").props.worn, worn);
+		assert.equal(find(section, "Button", "Yes").props.selected, worn === true);
+		assert.equal(find(section, "Button", "No").props.selected, worn === false);
 	}
 });
 
@@ -647,8 +548,9 @@ test("pending system dismissal retains form and disables reopening; setup naviga
 	assert.equal(find(h.render(), "AddContactsForm").props.quantity, "1");
 	assert.equal(find(h.render(), "Button", "Add spares").props.disabled, true);
 	assert.equal(sheet.props.busy, true);
+	h.store.pending = false;
 	h.store.state.eyes[0].replacementDays = null;
-	invoke(find(h.render(), "Button", "Lens setup"), "onPress");
+	invoke(find(h.render(), "Button", "Set up lenses"), "onPress");
 	assert.deepEqual(h.routes, ["/lens-editor"]);
 });
 
@@ -693,11 +595,19 @@ test("shared Add form retains controlled adapters, locked retry explanation and 
 	const values: string[] = [];
 	const form = load("../../src/components/home/AddContactsForm.tsx", {
 		"react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "Fragment" },
-		"../presentation": {
-			ChoiceControl: "ChoiceControl",
-			PresentationText: "PresentationText",
+		"@expo/ui": {
+			Column: "Column",
+			Row: "Row",
+			Picker: Object.assign(function Picker() {}, { Item: "PickerItem" }),
 		},
-		"../ui": { Field: "Field", Button: "Button" },
+		"./today-design": {
+			TodaySection: "Section",
+			TodayRow: "Row",
+			TodayText: "PresentationText",
+			TodayAction: "Button",
+		},
+		"./today-quantity": { __esModule: true, default: "Field" },
+		"./today-add-model": addModel,
 		"./model": model,
 	}).default({
 		eye: "both",
@@ -708,8 +618,8 @@ test("shared Add form retains controlled adapters, locked retry explanation and 
 		onQuantityChange: (value: string) => values.push(value),
 		onAdd: () => {},
 	});
-	assert.equal(find(form, "ChoiceControl").props.value, "both");
-	assert.equal(find(form, "ChoiceControl").props.disabled, true);
+	assert.equal(find(form, "Picker").props.selectedValue, "both");
+	assert.equal(find(form, "Picker").props.enabled, false);
 	assert.equal(find(form, "Field").props.value, "3");
 	assert.equal(find(form, "Field").props.disabled, true);
 	assert.equal(find(form, "Field").props.label, "Quantity per eye");
@@ -718,12 +628,18 @@ test("shared Add form retains controlled adapters, locked retry explanation and 
 		false,
 	);
 	assert.equal(
-		find(form, "PresentationText").props.children,
+		elements(form).find(
+			(node) => node.props.children === model.additionHint("both", true),
+		)?.props.children,
 		model.additionHint("both", true),
 	);
 	invoke(find(form, "Field"), "onChange", "4");
-	invoke(find(form, "ChoiceControl"), "onChange", "right");
-	assert.deepEqual(values, ["4", "right"]);
+	invoke(find(form, "Picker"), "onValueChange", "right");
+	assert.deepEqual(
+		values,
+		[],
+		"locked native callbacks cannot edit a partial intent",
+	);
 });
 
 test("dismissal preserves controlled quantity and eye drafts", () => {

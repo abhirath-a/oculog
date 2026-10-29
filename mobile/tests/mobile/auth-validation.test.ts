@@ -26,8 +26,8 @@ test("blank sign in validates synchronously, focuses Email and shows only one in
 	const h = harness();
 	h.press();
 	assert.deepEqual(h.requests, []);
-	assert.deepEqual(h.focused, ["Email"]);
-	assert.equal(h.error("Email"), "Enter a valid email address.");
+	assert.deepEqual(h.focused, ["Email address"]);
+	assert.equal(h.error("Email address"), "Enter a valid email address.");
 	assert.equal(h.error("Password"), "");
 	assert.equal(h.feedback().error, "");
 	assert.equal(h.feedback().busy, false);
@@ -43,11 +43,11 @@ test("invalid addresses never request authentication and always focus Email", ()
 		`${"a".repeat(249)}@b.com`,
 	]) {
 		const h = harness();
-		h.fill("Email", address);
+		h.fill("Email address", address);
 		h.fill("Password", "password123");
 		h.press();
 		assert.deepEqual(h.requests, [], address);
-		assert.deepEqual(h.focused, ["Email"]);
+		assert.deepEqual(h.focused, ["Email address"]);
 		assert.equal(h.feedback().error, "");
 	}
 });
@@ -63,29 +63,29 @@ test("backend-accepted email forms are not restricted by browser email rules", a
 		`${"😀".repeat(248)}@b.com`,
 	]) {
 		const h = harness();
-		h.fill("Email", address);
+		h.fill("Email address", address);
 		h.fill("Password", "password123");
 		h.press();
 		await h.flush();
 		assert.equal(h.requests.length, 1, address);
-		assert.equal(h.error("Email"), "");
+		assert.equal(h.error("Email address"), "");
 	}
 });
 
 test("password and confirmation validation stay inline and only the edited field clears", () => {
 	const h = harness("register");
-	h.fill("Email", "a@example.com");
+	h.fill("Email address", "a@example.com");
 	h.press();
 	assert.deepEqual(h.focused, ["Password"]);
 	assert.equal(h.error("Password"), "Password must be at least 8 characters.");
 	assert.equal(h.feedback().error, "");
-	h.fill("Email", "bad");
+	h.fill("Email address", "bad");
 	assert.ok(h.error("Password"));
 	h.press();
 	h.fill("Password", "password123");
 	assert.equal(h.error("Password"), "");
-	assert.ok(h.error("Email"));
-	h.fill("Email", "a@example.com");
+	assert.ok(h.error("Email address"));
+	h.fill("Email address", "a@example.com");
 	h.press();
 	assert.equal(h.focused.at(-1), "Confirm password");
 	assert.equal(h.error("Confirm password"), "Passwords do not match.");
@@ -99,19 +99,19 @@ test("password and confirmation validation stay inline and only the edited field
 
 test("uncertain network errors remain general feedback after field edits", async () => {
 	const h = harness("login", new Error("Connection lost; outcome unknown"));
-	h.fill("Email", "a@example.com");
+	h.fill("Email address", "a@example.com");
 	h.fill("Password", "password123");
 	h.press();
 	h.press();
 	await h.flush();
 	assert.equal(h.requests.length, 1);
 	assert.equal(h.feedback().error, "Connection lost; outcome unknown");
-	h.fill("Email", "bad");
+	h.fill("Email address", "bad");
 	h.press();
 	assert.equal(h.requests.length, 1);
 	assert.equal(h.feedback().error, "Connection lost; outcome unknown");
-	assert.ok(h.error("Email"));
-	h.fill("Email", "a@example.com");
-	assert.equal(h.error("Email"), "");
+	assert.ok(h.error("Email address"));
+	h.fill("Email address", "a@example.com");
+	assert.equal(h.error("Email address"), "");
 	assert.equal(h.feedback().error, "Connection lost; outcome unknown");
 });

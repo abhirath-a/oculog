@@ -1,4 +1,4 @@
-import Settings from "../../components/settings";
+import Settings from "../../components/settings/screen";
 import { useStore } from "../../lib/store";
 
 export default function SettingsRoute() {

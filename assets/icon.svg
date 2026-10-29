@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" aria-label="Oculog contact lens symbol">
+  <title>Oculog contact lens</title>
+  <!-- A tilted, shallow contact lens: upper rim, curved bowl, and inner edge. -->
+  <g transform="rotate(-19 64 64)" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="64" cy="50" rx="49" ry="19" stroke-width="7"/>
+    <path d="M16 50C20 78 36 96 64 96S108 78 112 50" stroke-width="7"/>
+    <path d="M28 54C35 65 49 71 64 71S93 65 100 54" stroke-width="4.5" opacity=".92"/>
+  </g>
+</svg>
+

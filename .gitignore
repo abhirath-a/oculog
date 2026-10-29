@@ -33,6 +33,13 @@ backups/
 *.log
 .DS_Store
 .direnv/
+.pnpm-store/
+# Local editor artifacts (kept on disk, excluded from publication).
+/:
+/:w
+/;
+/;w
+/;w:w
 result
 result-*
 

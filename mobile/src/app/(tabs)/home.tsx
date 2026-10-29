@@ -1,4 +1,4 @@
-import SimpleHome from "../../components/simple-home";
+import SimpleHome from "../../components/home/screen";
 import { useStore } from "../../lib/store";
 
 export default function Home() {

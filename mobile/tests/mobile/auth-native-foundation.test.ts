@@ -12,18 +12,14 @@ test("auth foundation uses one modest accessible task heading and readable non-g
 	const ui = source("components/ui.tsx");
 	const field = source("components/presentation/native-field.tsx");
 	assert.match(field, /<TextInput/);
-	assert.match(field, /borderWidth: 1/);
+	assert.match(field, /minHeight: props.multiline \? 88 : 44/);
 	assert.match(field, /secureTextEntry=\{secure\}/);
 	assert.doesNotMatch(field, /glassEffect|buttonStyle/);
 	assert.doesNotMatch(ui, /useMemo/);
 });
 
 test("every shell restoration gate gives context beyond a spinner", () => {
-	for (const path of [
-		"app/index.tsx",
-		"app/(tabs)/_layout.tsx",
-		"app/(tabs)/_layout.web.tsx",
-	])
+	for (const path of ["app/index.tsx", "app/(tabs)/_layout.tsx"])
 		assert.match(source(path), /<SessionRestoring/);
 	const loading = source("components/auth/session-state.tsx");
 	assert.match(loading, /Opening your journal/);
