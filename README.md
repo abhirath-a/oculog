@@ -6,7 +6,7 @@
 
 > **Early development; CI is not yet fully green.** See [known blockers](docs/release.md#current-blockers). iOS is the only supported client. The Python API is retained. No Android app or browser app is maintained. Oculog is not a medical device and does not diagnose, prescribe, or replace an eye-care professional.
 
-<video src="./.github/assets/oculog-demo.mp4" controls width="100%" muted></video>
+<video src="https://github.com/abhirath-a/oculog/raw/refs/heads/main/.github/assets/oculog-demo.mp4" width="100%" controls></video>
 
 ## Features
 
